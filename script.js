@@ -108,8 +108,11 @@ window.checkPasswordStrength = (password) => {
     const setRule = (id, passed) => {
         const el = document.getElementById(id);
         if (!el) return;
+        const icon = el.querySelector('i');
+        if (icon) {
+            icon.className = passed ? 'bi bi-check-circle' : 'bi bi-x-circle';
+        }
         el.classList.toggle('rule-pass', passed);
-        el.textContent = (passed ? '✓' : '✗') + el.textContent.slice(1);
     };
     setRule('rule-lower', /[a-z]/.test(password));
     setRule('rule-upper', /[A-Z]/.test(password));
@@ -125,7 +128,7 @@ window.handleForgotPassword = async () => {
     }
     try {
         await sendPasswordResetEmail(auth, email);
-        showAuthError('loginError', '✅ Reset email sent! Check your inbox.', true);
+        showAuthError('loginError', 'Reset email sent! Check your inbox.', true);
     } catch (e) {
         showAuthError('loginError', friendlyError(e.code));
     }
@@ -249,7 +252,11 @@ class OJTCalculator {
             const snap = await getDoc(doc(db, 'users', this.userId));
             if (snap.exists()) {
                 const data = snap.data();
-                this.entries = data.entries || [];
+                this.entries = (data.entries || []).map(e => ({
+                    ...e,
+                    breakMins: Number(e.breakMins) || 0,
+                    hours: parseFloat(e.hours) || 0
+                }));
                 this.hoursNeeded = data.hoursNeeded || 500;
                 this.includeWeekends = data.includeWeekends ?? true;
             }
@@ -330,7 +337,7 @@ class OJTCalculator {
             let diff = this._minuteDiff(timeIn, timeOut);
             if (diff <= 0) { this.showNotification('Time out must be after time in!', 'error'); return 0; }
             if (diff > 1440) { this.showNotification('Hours cannot exceed 24!', 'error'); return 0; }
-            diff = Math.max(0, diff - breakMins);
+            diff = Math.max(0, diff - Number(breakMins));
             return parseFloat((diff / 60).toFixed(2));
         } catch { this.showNotification('Error calculating hours.', 'error'); return 0; }
     }
@@ -339,7 +346,7 @@ class OJTCalculator {
         try {
             let diff = this._minuteDiff(timeIn, timeOut);
             if (diff <= 0 || diff > 1440) return 0;
-            diff = Math.max(0, diff - breakMins);
+            diff = Math.max(0, diff - Number(breakMins));
             return parseFloat((diff / 60).toFixed(2));
         } catch { return 0; }
     }
@@ -355,10 +362,15 @@ class OJTCalculator {
         const date = document.getElementById('date').value;
         const timeIn = document.getElementById('timeIn').value;
         const timeOut = document.getElementById('timeOut').value;
-        const breakMins = parseInt(document.getElementById('breakTime').value) || 0;
+        const breakTimeInput = document.getElementById('breakTime').value;
+        const breakMins = breakTimeInput ? Number(parseInt(breakTimeInput)) : 0;
 
         if (!date || !timeIn || !timeOut) {
             this.showNotification('Please fill in all fields!', 'error'); return;
+        }
+
+        if (isNaN(breakMins) || breakMins < 0) {
+            this.showNotification('Break time must be a valid number!', 'error'); return;
         }
 
         const hours = this.calculateHours(timeIn, timeOut, breakMins);
@@ -370,7 +382,7 @@ class OJTCalculator {
             this.showNotification('Entry updated!', 'success');
         } else {
             this.entries.push({ date, timeIn, timeOut, breakMins, hours });
-            this.showNotification('Entry added! ✅', 'success');
+            this.showNotification('Entry added!', 'success');
         }
 
         this.entries.sort((a, b) => new Date(a.date) - new Date(b.date));
@@ -409,10 +421,11 @@ class OJTCalculator {
             <td><input type="time" class="table-input" id="pendingTimeIn" value="${lastEntry.timeIn}"></td>
             <td><input type="time" class="table-input" id="pendingTimeOut" value="${lastEntry.timeOut}"></td>
             <td><input type="number" class="table-input" id="pendingBreak" value="${lastBreak}" min="0" style="width:60px"></td>
+            <td id="pendingGross">${this.calculateHoursQuiet(lastEntry.timeIn, lastEntry.timeOut, 0)}</td>
             <td id="pendingHours">${lastEntry.hours}</td>
             <td class="pending-actions">
-                <button class="save-btn" onclick="window.calculator.savePendingRow()">✅ Save</button>
-                <button class="cancel-btn" onclick="window.calculator.cancelPendingRow()">✖</button>
+                <button class="save-btn" onclick="window.calculator.savePendingRow()"><i class="bi bi-check-lg"></i> Save</button>
+                <button class="cancel-btn" onclick="window.calculator.cancelPendingRow()"><i class="bi bi-x-lg"></i></button>
             </td>
         `;
         tbody.appendChild(row);
@@ -422,8 +435,10 @@ class OJTCalculator {
             const tout = document.getElementById('pendingTimeOut').value;
             const brk = parseInt(document.getElementById('pendingBreak').value) || 0;
             if (tin && tout) {
-                const h = this.calculateHoursQuiet(tin, tout, brk);
-                document.getElementById('pendingHours').textContent = h > 0 ? h : '—';
+                const gross = this.calculateHoursQuiet(tin, tout, 0);
+                const net = this.calculateHoursQuiet(tin, tout, brk);
+                document.getElementById('pendingGross').textContent = gross > 0 ? gross : '—';
+                document.getElementById('pendingHours').textContent = net > 0 ? net : '—';
             }
         };
         document.getElementById('pendingTimeIn').addEventListener('change', updatePreview);
@@ -432,17 +447,22 @@ class OJTCalculator {
 
         row.scrollIntoView({ behavior: 'smooth', block: 'center' });
         document.getElementById('pendingDate').focus();
-        this.showNotification('Edit the row then click ✅ Save', 'info');
+        this.showNotification('Edit the row then click Save', 'info');
     }
 
     async savePendingRow() {
         const date = document.getElementById('pendingDate').value;
         const timeIn = document.getElementById('pendingTimeIn').value;
         const timeOut = document.getElementById('pendingTimeOut').value;
-        const breakMins = parseInt(document.getElementById('pendingBreak').value) || 0;
+        const breakMinsInput = document.getElementById('pendingBreak').value;
+        const breakMins = breakMinsInput ? parseInt(breakMinsInput) : 0;
 
         if (!date || !timeIn || !timeOut) {
             this.showNotification('Please fill in all fields!', 'error'); return;
+        }
+
+        if (isNaN(breakMins) || breakMins < 0) {
+            this.showNotification('Break time must be a valid number!', 'error'); return;
         }
 
         const hours = this.calculateHours(timeIn, timeOut, breakMins);
@@ -458,7 +478,7 @@ class OJTCalculator {
         this.entries.sort((a, b) => new Date(a.date) - new Date(b.date));
         await this.saveToFirestore();
         this.render();
-        this.showNotification('Entry saved! ✅', 'success');
+        this.showNotification('Entry saved!', 'success');
     }
 
     cancelPendingRow() {
@@ -466,7 +486,7 @@ class OJTCalculator {
         if (row) row.remove();
         if (this.entries.length === 0) {
             document.getElementById('tableBody').innerHTML =
-                '<tr class="empty-state"><td colspan="6" class="text-center"><p>✨ No entries yet. Add your first entry!</p></td></tr>';
+                '<tr class="empty-state"><td colspan="7" class="text-center"><p><i class="bi bi-inbox"></i> No entries yet. Add your first entry!</p></td></tr>';
         }
     }
 
@@ -496,10 +516,11 @@ class OJTCalculator {
             <td><input type="time" class="table-input" id="editTimeIn" value="${entry.timeIn}"></td>
             <td><input type="time" class="table-input" id="editTimeOut" value="${entry.timeOut}"></td>
             <td><input type="number" class="table-input" id="editBreak" value="${breakMins}" min="0" style="width:60px"></td>
+            <td id="editGrossPreview">${this.calculateHoursQuiet(entry.timeIn, entry.timeOut, 0)}</td>
             <td id="editHoursPreview">${entry.hours}</td>
             <td class="pending-actions">
-                <button class="save-btn" onclick="window.calculator.saveEditRow(${index})">✅ Save</button>
-                <button class="cancel-btn" onclick="window.calculator.render()">✖</button>
+                <button class="save-btn" onclick="window.calculator.saveEditRow(${index})"><i class="bi bi-check-lg"></i> Save</button>
+                <button class="cancel-btn" onclick="window.calculator.render()"><i class="bi bi-x-lg"></i></button>
             </td>
         `;
 
@@ -508,8 +529,10 @@ class OJTCalculator {
             const tout = document.getElementById('editTimeOut').value;
             const brk = parseInt(document.getElementById('editBreak').value) || 0;
             if (tin && tout) {
-                const h = this.calculateHoursQuiet(tin, tout, brk);
-                document.getElementById('editHoursPreview').textContent = h > 0 ? h : '—';
+                const gross = this.calculateHoursQuiet(tin, tout, 0);
+                const net = this.calculateHoursQuiet(tin, tout, brk);
+                document.getElementById('editGrossPreview').textContent = gross > 0 ? gross : '—';
+                document.getElementById('editHoursPreview').textContent = net > 0 ? net : '—';
             }
         };
         document.getElementById('editTimeIn').addEventListener('change', updatePreview);
@@ -522,10 +545,15 @@ class OJTCalculator {
         const date = document.getElementById('editDate').value;
         const timeIn = document.getElementById('editTimeIn').value;
         const timeOut = document.getElementById('editTimeOut').value;
-        const breakMins = parseInt(document.getElementById('editBreak').value) || 0;
+        const breakMinsInput = document.getElementById('editBreak').value;
+        const breakMins = breakMinsInput ? Number(parseInt(breakMinsInput)) : 0;
 
         if (!date || !timeIn || !timeOut) {
             this.showNotification('Please fill in all fields!', 'error'); return;
+        }
+
+        if (isNaN(breakMins) || breakMins < 0) {
+            this.showNotification('Break time must be a valid number!', 'error'); return;
         }
 
         const hours = this.calculateHours(timeIn, timeOut, breakMins);
@@ -535,7 +563,7 @@ class OJTCalculator {
         this.entries.sort((a, b) => new Date(a.date) - new Date(b.date));
         await this.saveToFirestore();
         this.render();
-        this.showNotification('Entry updated! ✅', 'success');
+        this.showNotification('Entry updated!', 'success');
     }
 
     // ---- Stats ----
@@ -555,21 +583,34 @@ class OJTCalculator {
         tbody.innerHTML = '';
 
         if (this.entries.length === 0) {
-            tbody.innerHTML = '<tr class="empty-state"><td colspan="6" class="text-center"><p>✨ No entries yet. Add your first entry!</p></td></tr>';
+            tbody.innerHTML = '<tr class="empty-state"><td colspan="7" class="text-center"><p>No entries yet. Add your first entry!</p></td></tr>';
             return;
         }
 
         this.entries.forEach((entry, index) => {
             const row = document.createElement('tr');
             row.dataset.index = index;
-            const breakMins = entry.breakMins || 0;
-            const breakLabel = breakMins > 0 ? `${breakMins}m` : '—';
+            const breakMins = Number(entry.breakMins) || 0;
+            let breakLabel = '—';
+            if (breakMins > 0) {
+                const h = Math.floor(breakMins / 60);
+                const m = breakMins % 60;
+                if (h > 0 && m > 0) breakLabel = `${h} hr ${m} mins`;
+                else if (h > 0) breakLabel = `${h} hr`;
+                else breakLabel = `${m} mins`;
+            }
+
+            // Gross hours = time diff with no break; net hours = after break
+            const grossHours = this.calculateHoursQuiet(entry.timeIn, entry.timeOut, 0);
+            const netHours = entry.hours;
+
             row.innerHTML = `
                 <td>${this.formatDate(entry.date)}</td>
                 <td>${this.convertTo12Hour(entry.timeIn)}</td>
                 <td>${this.convertTo12Hour(entry.timeOut)}</td>
                 <td>${breakLabel}</td>
-                <td>${entry.hours}</td>
+                <td>${grossHours}</td>
+                <td>${netHours}</td>
                 <td class="row-actions">
                     <button class="edit-btn" onclick="window.calculator.editRow(${index})">Edit</button>
                     <button class="delete-btn" onclick="window.calculator.deleteEntry(${index})">Delete</button>
@@ -624,7 +665,7 @@ class OJTCalculator {
         a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
         a.download = `ojt_tracker_${new Date().toISOString().split('T')[0]}.csv`;
         a.click();
-        this.showNotification('Exported! 📥', 'success');
+        this.showNotification('Exported to CSV!', 'success');
     }
 
     // ---- Clear All ----
