@@ -325,19 +325,22 @@ class OJTCalculator {
     }
 
     // ---- Hour Calculation ----
-    calculateHours(timeIn, timeOut) {
+    calculateHours(timeIn, timeOut, breakMins = 0) {
         try {
-            const diff = this._minuteDiff(timeIn, timeOut);
+            let diff = this._minuteDiff(timeIn, timeOut);
             if (diff <= 0) { this.showNotification('Time out must be after time in!', 'error'); return 0; }
             if (diff > 1440) { this.showNotification('Hours cannot exceed 24!', 'error'); return 0; }
+            diff = Math.max(0, diff - breakMins);
             return parseFloat((diff / 60).toFixed(2));
         } catch { this.showNotification('Error calculating hours.', 'error'); return 0; }
     }
 
-    calculateHoursQuiet(timeIn, timeOut) {
+    calculateHoursQuiet(timeIn, timeOut, breakMins = 0) {
         try {
-            const diff = this._minuteDiff(timeIn, timeOut);
-            return diff > 0 && diff <= 1440 ? parseFloat((diff / 60).toFixed(2)) : 0;
+            let diff = this._minuteDiff(timeIn, timeOut);
+            if (diff <= 0 || diff > 1440) return 0;
+            diff = Math.max(0, diff - breakMins);
+            return parseFloat((diff / 60).toFixed(2));
         } catch { return 0; }
     }
 
@@ -352,26 +355,28 @@ class OJTCalculator {
         const date = document.getElementById('date').value;
         const timeIn = document.getElementById('timeIn').value;
         const timeOut = document.getElementById('timeOut').value;
+        const breakMins = parseInt(document.getElementById('breakTime').value) || 0;
 
         if (!date || !timeIn || !timeOut) {
             this.showNotification('Please fill in all fields!', 'error'); return;
         }
 
-        const hours = this.calculateHours(timeIn, timeOut);
+        const hours = this.calculateHours(timeIn, timeOut, breakMins);
         if (hours === 0) return;
 
         const existingIndex = this.entries.findIndex(e => e.date === date);
         if (existingIndex !== -1) {
-            this.entries[existingIndex] = { date, timeIn, timeOut, hours };
+            this.entries[existingIndex] = { date, timeIn, timeOut, breakMins, hours };
             this.showNotification('Entry updated!', 'success');
         } else {
-            this.entries.push({ date, timeIn, timeOut, hours });
+            this.entries.push({ date, timeIn, timeOut, breakMins, hours });
             this.showNotification('Entry added! ✅', 'success');
         }
 
         this.entries.sort((a, b) => new Date(a.date) - new Date(b.date));
         document.getElementById('timeIn').value = '';
         document.getElementById('timeOut').value = '';
+        document.getElementById('breakTime').value = '';
         this.setupDatePicker();
 
         await this.saveToFirestore();
@@ -390,6 +395,7 @@ class OJTCalculator {
         const lastEntry = this.entries[this.entries.length - 1];
         const nextDate = this.getNextWorkDate(new Date(lastEntry.date + 'T00:00:00'));
         const nextDateStr = this.formatDateForInput(nextDate);
+        const lastBreak = lastEntry.breakMins || 0;
 
         const tbody = document.getElementById('tableBody');
         const emptyRow = tbody.querySelector('.empty-state');
@@ -402,6 +408,7 @@ class OJTCalculator {
             <td><input type="date" class="table-input" id="pendingDate" value="${nextDateStr}"></td>
             <td><input type="time" class="table-input" id="pendingTimeIn" value="${lastEntry.timeIn}"></td>
             <td><input type="time" class="table-input" id="pendingTimeOut" value="${lastEntry.timeOut}"></td>
+            <td><input type="number" class="table-input" id="pendingBreak" value="${lastBreak}" min="0" style="width:60px"></td>
             <td id="pendingHours">${lastEntry.hours}</td>
             <td class="pending-actions">
                 <button class="save-btn" onclick="window.calculator.savePendingRow()">✅ Save</button>
@@ -413,13 +420,15 @@ class OJTCalculator {
         const updatePreview = () => {
             const tin = document.getElementById('pendingTimeIn').value;
             const tout = document.getElementById('pendingTimeOut').value;
+            const brk = parseInt(document.getElementById('pendingBreak').value) || 0;
             if (tin && tout) {
-                const h = this.calculateHoursQuiet(tin, tout);
+                const h = this.calculateHoursQuiet(tin, tout, brk);
                 document.getElementById('pendingHours').textContent = h > 0 ? h : '—';
             }
         };
         document.getElementById('pendingTimeIn').addEventListener('change', updatePreview);
         document.getElementById('pendingTimeOut').addEventListener('change', updatePreview);
+        document.getElementById('pendingBreak').addEventListener('input', updatePreview);
 
         row.scrollIntoView({ behavior: 'smooth', block: 'center' });
         document.getElementById('pendingDate').focus();
@@ -430,19 +439,20 @@ class OJTCalculator {
         const date = document.getElementById('pendingDate').value;
         const timeIn = document.getElementById('pendingTimeIn').value;
         const timeOut = document.getElementById('pendingTimeOut').value;
+        const breakMins = parseInt(document.getElementById('pendingBreak').value) || 0;
 
         if (!date || !timeIn || !timeOut) {
             this.showNotification('Please fill in all fields!', 'error'); return;
         }
 
-        const hours = this.calculateHours(timeIn, timeOut);
+        const hours = this.calculateHours(timeIn, timeOut, breakMins);
         if (hours === 0) return;
 
         const existingIndex = this.entries.findIndex(e => e.date === date);
         if (existingIndex !== -1) {
-            this.entries[existingIndex] = { date, timeIn, timeOut, hours };
+            this.entries[existingIndex] = { date, timeIn, timeOut, breakMins, hours };
         } else {
-            this.entries.push({ date, timeIn, timeOut, hours });
+            this.entries.push({ date, timeIn, timeOut, breakMins, hours });
         }
 
         this.entries.sort((a, b) => new Date(a.date) - new Date(b.date));
@@ -456,7 +466,7 @@ class OJTCalculator {
         if (row) row.remove();
         if (this.entries.length === 0) {
             document.getElementById('tableBody').innerHTML =
-                '<tr class="empty-state"><td colspan="5" class="text-center"><p>✨ No entries yet. Add your first entry!</p></td></tr>';
+                '<tr class="empty-state"><td colspan="6" class="text-center"><p>✨ No entries yet. Add your first entry!</p></td></tr>';
         }
     }
 
@@ -479,11 +489,13 @@ class OJTCalculator {
         const tbody = document.getElementById('tableBody');
         const rows = tbody.querySelectorAll('tr[data-index]');
         const row = rows[index];
+        const breakMins = entry.breakMins || 0;
 
         row.innerHTML = `
             <td><input type="date" class="table-input" id="editDate" value="${entry.date}"></td>
             <td><input type="time" class="table-input" id="editTimeIn" value="${entry.timeIn}"></td>
             <td><input type="time" class="table-input" id="editTimeOut" value="${entry.timeOut}"></td>
+            <td><input type="number" class="table-input" id="editBreak" value="${breakMins}" min="0" style="width:60px"></td>
             <td id="editHoursPreview">${entry.hours}</td>
             <td class="pending-actions">
                 <button class="save-btn" onclick="window.calculator.saveEditRow(${index})">✅ Save</button>
@@ -494,13 +506,15 @@ class OJTCalculator {
         const updatePreview = () => {
             const tin = document.getElementById('editTimeIn').value;
             const tout = document.getElementById('editTimeOut').value;
+            const brk = parseInt(document.getElementById('editBreak').value) || 0;
             if (tin && tout) {
-                const h = this.calculateHoursQuiet(tin, tout);
+                const h = this.calculateHoursQuiet(tin, tout, brk);
                 document.getElementById('editHoursPreview').textContent = h > 0 ? h : '—';
             }
         };
         document.getElementById('editTimeIn').addEventListener('change', updatePreview);
         document.getElementById('editTimeOut').addEventListener('change', updatePreview);
+        document.getElementById('editBreak').addEventListener('input', updatePreview);
         row.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
 
@@ -508,15 +522,16 @@ class OJTCalculator {
         const date = document.getElementById('editDate').value;
         const timeIn = document.getElementById('editTimeIn').value;
         const timeOut = document.getElementById('editTimeOut').value;
+        const breakMins = parseInt(document.getElementById('editBreak').value) || 0;
 
         if (!date || !timeIn || !timeOut) {
             this.showNotification('Please fill in all fields!', 'error'); return;
         }
 
-        const hours = this.calculateHours(timeIn, timeOut);
+        const hours = this.calculateHours(timeIn, timeOut, breakMins);
         if (hours === 0) return;
 
-        this.entries[index] = { date, timeIn, timeOut, hours };
+        this.entries[index] = { date, timeIn, timeOut, breakMins, hours };
         this.entries.sort((a, b) => new Date(a.date) - new Date(b.date));
         await this.saveToFirestore();
         this.render();
@@ -540,17 +555,20 @@ class OJTCalculator {
         tbody.innerHTML = '';
 
         if (this.entries.length === 0) {
-            tbody.innerHTML = '<tr class="empty-state"><td colspan="5" class="text-center"><p>✨ No entries yet. Add your first entry!</p></td></tr>';
+            tbody.innerHTML = '<tr class="empty-state"><td colspan="6" class="text-center"><p>✨ No entries yet. Add your first entry!</p></td></tr>';
             return;
         }
 
         this.entries.forEach((entry, index) => {
             const row = document.createElement('tr');
             row.dataset.index = index;
+            const breakMins = entry.breakMins || 0;
+            const breakLabel = breakMins > 0 ? `${breakMins}m` : '—';
             row.innerHTML = `
                 <td>${this.formatDate(entry.date)}</td>
                 <td>${this.convertTo12Hour(entry.timeIn)}</td>
                 <td>${this.convertTo12Hour(entry.timeOut)}</td>
+                <td>${breakLabel}</td>
                 <td>${entry.hours}</td>
                 <td class="row-actions">
                     <button class="edit-btn" onclick="window.calculator.editRow(${index})">Edit</button>
