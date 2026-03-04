@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OJT Tracker</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600&display=swap" rel="stylesheet">
+</head>
+<body>
+
+    <!-- AUTH SCREEN -->
+    <div id="authScreen" class="auth-screen">
+        <div class="auth-bg">
+            <div class="auth-blob blob-1"></div>
+            <div class="auth-blob blob-2"></div>
+            <div class="auth-blob blob-3"></div>
+        </div>
+        <div class="auth-card">
+            <div class="auth-logo">
+                <div class="auth-logo-icon">📊</div>
+                <h1 class="auth-title">OJT Tracker</h1>
+                <p class="auth-sub">Track your training hours like a pro</p>
+            </div>
+
+            <div class="auth-tabs">
+                <button class="auth-tab active" id="loginTab" onclick="switchTab('login')">Sign In</button>
+                <button class="auth-tab" id="signupTab" onclick="switchTab('signup')">Sign Up</button>
+            </div>
+
+            <!-- Login Form -->
+            <div id="loginForm" class="auth-form">
+                <div class="auth-field">
+                    <label>Email</label>
+                    <input type="email" id="loginEmail" placeholder="you@email.com" class="auth-input">
+                </div>
+                <div class="auth-field">
+                    <label>Password</label>
+                    <input type="password" id="loginPassword" placeholder="Your password" class="auth-input">
+                </div>
+                <div class="auth-error" id="loginError"></div>
+                <button class="auth-btn" id="loginBtn" onclick="handleLogin()">Sign In</button>
+                <button class="auth-btn auth-btn-google" onclick="handleGoogleLogin()">
+                    <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.29-8.16 2.29-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+                    Continue with Google
+                </button>
+                <p class="auth-forgot" onclick="handleForgotPassword()">Forgot password?</p>
+            </div>
+
+            <!-- Signup Form -->
+            <div id="signupForm" class="auth-form hidden">
+                <div class="auth-field">
+                    <label>Full Name</label>
+                    <input type="text" id="signupName" placeholder="Your name" class="auth-input">
+                </div>
+                <div class="auth-field">
+                    <label>Email</label>
+                    <input type="email" id="signupEmail" placeholder="you@email.com" class="auth-input">
+                </div>
+                <div class="auth-field">
+                    <label>Password</label>
+                    <input type="password" id="signupPassword" placeholder="Min. 6 characters" class="auth-input">
+                </div>
+                <div class="auth-error" id="signupError"></div>
+                <button class="auth-btn" id="signupBtn" onclick="handleSignup()">Create Account</button>
+                <button class="auth-btn auth-btn-google" onclick="handleGoogleLogin()">
+                    <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.29-8.16 2.29-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+                    Continue with Google
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN APP -->
+    <div id="appScreen" class="hidden">
+    <div class="container">
+        <header class="header">
+            <div class="header-content">
+                <div class="logo-section">
+                    <h1 class="logo">📊 OJT Tracker</h1>
+                    <p class="tagline">Track your training hours like a pro</p>
+                </div>
+                <div class="header-settings">
+                    <div class="header-setting-item">
+                        <label class="toggle-label">
+                            <span class="toggle-text">Include Weekends</span>
+                            <input type="checkbox" id="weekendToggle" checked>
+                            <span class="toggle-switch"></span>
+                        </label>
+                    </div>
+                    <div class="header-setting-item">
+                        <div class="hours-needed-control">
+                            <label class="hours-label">Target Hours:</label>
+                            <div class="hours-input-group">
+                                <input type="number" id="hoursNeeded" class="hours-input" min="0">
+                                <button class="btn btn-small btn-header-set" id="updateHours">Set</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="header-setting-item">
+                        <div class="user-info">
+                            <div class="user-avatar" id="userAvatar"></div>
+                            <span class="user-name" id="userDisplayName"></span>
+                            <button class="btn-logout" id="logoutBtn">Sign Out</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <main class="main-content">
+            <section class="card input-card">
+                <h2 class="section-title">Add New Entry</h2>
+                <form class="entry-form" id="entryForm">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="date">📅 Date</label>
+                            <input type="date" id="date" required class="form-input">
+                        </div>
+                        <div class="form-group">
+                            <label for="timeIn">⏰ Time In</label>
+                            <input type="time" id="timeIn" required class="form-input">
+                        </div>
+                        <div class="form-group">
+                            <label for="timeOut">🏁 Time Out</label>
+                            <input type="time" id="timeOut" required class="form-input">
+                        </div>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" id="addBtn" class="btn btn-primary btn-lg">
+                            <span>➕ Add Entry</span>
+                        </button>
+                    </div>
+                </form>
+            </section>
+
+            <section class="stats-grid">
+                <div class="stat-card stat-card-info">
+                    <div class="stat-header"><h3>Rendered</h3><span class="stat-icon">✅</span></div>
+                    <p class="stat-value" id="hoursRendered">0.00</p>
+                    <p class="stat-unit">hours completed</p>
+                </div>
+                <div class="stat-card stat-card-warning">
+                    <div class="stat-header"><h3>Remaining</h3><span class="stat-icon">⏳</span></div>
+                    <p class="stat-value" id="remainingHours">500.00</p>
+                    <p class="stat-unit">hours left</p>
+                </div>
+                <div class="stat-card stat-card-success">
+                    <div class="stat-header"><h3>Days (8hrs/day)</h3><span class="stat-icon">📍</span></div>
+                    <p class="stat-value" id="remainingDays">62.5</p>
+                    <p class="stat-unit">workdays remaining</p>
+                </div>
+            </section>
+
+            <section class="card progress-card">
+                <div class="progress-header">
+                    <h2 class="section-title">Progress</h2>
+                    <p class="progress-percentage" id="progressText">0%</p>
+                </div>
+                <div class="progress-bar-container">
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill"></div>
+                    </div>
+                </div>
+                <p class="progress-info">Keep pushing! You're making great progress! 💪</p>
+            </section>
+
+            <section class="card table-card">
+                <div class="table-section-header">
+                    <h2 class="section-title">Your Entries</h2>
+                    <button type="button" id="duplicateBtn" class="btn btn-secondary btn-duplicate">
+                        <span>📋 Duplicate Last</span>
+                    </button>
+                </div>
+                <div class="table-wrapper">
+                    <table id="hoursTable" class="entries-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Time In</th>
+                                <th>Time Out</th>
+                                <th>Hours</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tableBody">
+                            <tr class="empty-state">
+                                <td colspan="5" class="text-center"><p>✨ No entries yet. Add your first entry!</p></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="table-footer">
+                    <div class="total-row">
+                        <span class="total-label">Total Hours:</span>
+                        <span class="total-value" id="totalHours">0.00</span>
+                    </div>
+                </div>
+            </section>
+
+            <section class="actions-section">
+                <button id="exportBtn" class="btn btn-secondary"><span>📥 Export to CSV</span></button>
+                <button id="clearBtn" class="btn btn-danger"><span>🗑️ Clear All</span></button>
+            </section>
+        </main>
+
+        <footer class="footer">
+            <p>Made with ❤️ for your OJT journey • v3.0</p>
+        </footer>
+    </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="loading-overlay">
+        <div class="loading-spinner"></div>
+        <p>Loading your data...</p>
+    </div>
+
+    <script type="module" src="script.js"></script>
+</body>
+</html>
