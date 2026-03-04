@@ -421,7 +421,7 @@ class OJTCalculator {
             <td><input type="time" class="table-input" id="pendingTimeIn" value="${lastEntry.timeIn}"></td>
             <td><input type="time" class="table-input" id="pendingTimeOut" value="${lastEntry.timeOut}"></td>
             <td><input type="number" class="table-input" id="pendingBreak" value="${lastBreak}" min="0" style="width:60px"></td>
-            <td id="pendingGross">${this.calculateHoursQuiet(lastEntry.timeIn, lastEntry.timeOut, 0)}</td>
+            <td id="pendingGross">${this.calculateHoursQuiet(lastEntry.timeIn, lastEntry.timeOut, 0) || parseFloat((parseFloat(lastEntry.hours) + (Number(lastEntry.breakMins) / 60)).toFixed(2))}</td>
             <td id="pendingHours">${lastEntry.hours}</td>
             <td class="pending-actions">
                 <button class="save-btn" onclick="window.calculator.savePendingRow()"><i class="bi bi-check-lg"></i> Save</button>
@@ -516,7 +516,7 @@ class OJTCalculator {
             <td><input type="time" class="table-input" id="editTimeIn" value="${entry.timeIn}"></td>
             <td><input type="time" class="table-input" id="editTimeOut" value="${entry.timeOut}"></td>
             <td><input type="number" class="table-input" id="editBreak" value="${breakMins}" min="0" style="width:60px"></td>
-            <td id="editGrossPreview">${this.calculateHoursQuiet(entry.timeIn, entry.timeOut, 0)}</td>
+            <td id="editGrossPreview">${this.calculateHoursQuiet(entry.timeIn, entry.timeOut, 0) || parseFloat((parseFloat(entry.hours) + (Number(entry.breakMins) / 60)).toFixed(2))}</td>
             <td id="editHoursPreview">${entry.hours}</td>
             <td class="pending-actions">
                 <button class="save-btn" onclick="window.calculator.saveEditRow(${index})"><i class="bi bi-check-lg"></i> Save</button>
@@ -600,8 +600,9 @@ class OJTCalculator {
                 else breakLabel = `${m} mins`;
             }
 
-            // Gross hours = time diff with no break; net hours = after break
-            const grossHours = this.calculateHoursQuiet(entry.timeIn, entry.timeOut, 0);
+            // Gross hours = time diff without break deducted; net = after break
+            const grossHours = this.calculateHoursQuiet(entry.timeIn, entry.timeOut, 0)
+                || parseFloat((parseFloat(entry.hours) + (Number(entry.breakMins) / 60)).toFixed(2));
             const netHours = entry.hours;
 
             row.innerHTML = `
