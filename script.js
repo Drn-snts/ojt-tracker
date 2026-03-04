@@ -658,8 +658,21 @@ class OJTCalculator {
         if (this.entries.length === 0) {
             this.showNotification('No entries to export!', 'error'); return;
         }
-        let csv = 'Date,Time In,Time Out,Hours Rendered\n';
-        this.entries.forEach(e => { csv += `${this.formatDate(e.date)},${e.timeIn},${e.timeOut},${e.hours}\n`; });
+        let csv = 'Date,Time In,Time Out,Break,Total Hours,Net Hours\n';
+        this.entries.forEach(e => {
+            const grossHours = this.calculateHoursQuiet(e.timeIn, e.timeOut, 0)
+                || parseFloat((parseFloat(e.hours) + (Number(e.breakMins) / 60)).toFixed(2));
+            const breakMins = Number(e.breakMins) || 0;
+            let breakLabel = '—';
+            if (breakMins > 0) {
+                const h = Math.floor(breakMins / 60);
+                const m = breakMins % 60;
+                if (h > 0 && m > 0) breakLabel = `${h} hr ${m} mins`;
+                else if (h > 0) breakLabel = `${h} hr`;
+                else breakLabel = `${m} mins`;
+            }
+            csv += `${this.formatDate(e.date)},${this.convertTo12Hour(e.timeIn)},${this.convertTo12Hour(e.timeOut)},${breakLabel},${grossHours},${e.hours}\n`;
+        });
         csv += `\nSummary\nTotal Hours,${this.getTotalHours()}\nTarget,${this.hoursNeeded}\nRemaining,${this.getRemainingHours()}\nProgress,${this.getProgress()}%\n`;
 
         const a = document.createElement('a');
