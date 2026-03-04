@@ -319,7 +319,10 @@ class OJTCalculator {
 
     formatDate(dateString) {
         const date = new Date(dateString + 'T00:00:00');
-        return date.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' });
+        const month = date.toLocaleDateString('en-US', { month: 'short' });
+        const day = String(date.getDate()).padStart(2, '0');
+        const year = date.getFullYear();
+        return `${month} ${day} ${year}`;
     }
 
     convertTo12Hour(timeString) {
@@ -671,7 +674,7 @@ class OJTCalculator {
                 else if (h > 0) breakLabel = `${h} hr`;
                 else breakLabel = `${m} mins`;
             }
-            csv += `${this.formatDate(e.date)},${this.convertTo12Hour(e.timeIn)},${this.convertTo12Hour(e.timeOut)},${breakLabel},${grossHours},${e.hours}\n`;
+            csv += `"${this.formatDate(e.date)}","${this.convertTo12Hour(e.timeIn)}","${this.convertTo12Hour(e.timeOut)}","${breakLabel}",${grossHours},${e.hours}\n`;
         });
         csv += `\nSummary\nTotal Hours,${this.getTotalHours()}\nTarget,${this.hoursNeeded}\nRemaining,${this.getRemainingHours()}\nProgress,${this.getProgress()}%\n`;
 
