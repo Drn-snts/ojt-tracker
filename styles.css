@@ -213,6 +213,23 @@
     transform: none;
 }
 
+.password-rules {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-top: 6px;
+}
+
+.rule {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.4);
+    transition: color 0.2s;
+}
+
+.rule-pass {
+    color: #48bb78 !important;
+}
+
 .auth-btn-google {
     background: rgba(255,255,255,0.1);
     border: 1.5px solid rgba(255,255,255,0.2);

@@ -10,8 +10,6 @@ import {
     onAuthStateChanged,
     updateProfile,
     sendPasswordResetEmail,
-    GoogleAuthProvider,
-    signInWithPopup
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import {
     getFirestore,
@@ -32,7 +30,6 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
-const googleProvider = new GoogleAuthProvider();
 
 // ============================================================
 //  AUTH HELPERS — exposed to window for onclick handlers
@@ -76,8 +73,22 @@ window.handleSignup = async () => {
         showAuthError('signupError', 'Please fill in all fields.');
         return;
     }
+
+    // Password validation
     if (password.length < 6) {
         showAuthError('signupError', 'Password must be at least 6 characters.');
+        return;
+    }
+    if (!/[a-z]/.test(password)) {
+        showAuthError('signupError', 'Password must include at least 1 lowercase letter.');
+        return;
+    }
+    if (!/[A-Z]/.test(password)) {
+        showAuthError('signupError', 'Password must include at least 1 uppercase letter.');
+        return;
+    }
+    if (!/[0-9]/.test(password)) {
+        showAuthError('signupError', 'Password must include at least 1 number.');
         return;
     }
 
@@ -93,13 +104,17 @@ window.handleSignup = async () => {
     }
 };
 
-window.handleGoogleLogin = async () => {
-    try {
-        await signInWithPopup(auth, googleProvider);
-    } catch (e) {
-        showAuthError('loginError', friendlyError(e.code));
-        showAuthError('signupError', friendlyError(e.code));
-    }
+window.checkPasswordStrength = (password) => {
+    const setRule = (id, passed) => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.classList.toggle('rule-pass', passed);
+        el.textContent = (passed ? '✓' : '✗') + el.textContent.slice(1);
+    };
+    setRule('rule-lower', /[a-z]/.test(password));
+    setRule('rule-upper', /[A-Z]/.test(password));
+    setRule('rule-number', /[0-9]/.test(password));
+    setRule('rule-length', password.length >= 6);
 };
 
 window.handleForgotPassword = async () => {
