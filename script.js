@@ -606,11 +606,10 @@ class OJTCalculator {
         this.showNotification(`Target updated to ${val} hours!`, 'success');
     }
 
-    // ---- Export to Excel (SheetJS) ----
+    // ---- Export to Excel (SheetJS — pixel-perfect match to sample) ----
     async exportToExcel() {
         if (this.entries.length === 0) { this.showNotification('No entries to export!', 'error'); return; }
 
-        // Dynamically load SheetJS
         if (!window.XLSX) {
             await new Promise((resolve, reject) => {
                 const s = document.createElement('script');
@@ -620,156 +619,200 @@ class OJTCalculator {
             });
         }
 
-        const XLSX = window.XLSX;
-        const wb = XLSX.utils.book_new();
+        const X = window.XLSX;
+        const wb = X.utils.book_new();
         const ws = {};
 
-        // ── Colour helpers ──
-        const headerFill  = { patternType: 'solid', fgColor: { rgb: '1F3864' } }; // dark navy (title)
-        const colHdrFill  = { patternType: 'solid', fgColor: { rgb: '2E5090' } }; // blue (col headers)
-        const labelFill   = { patternType: 'solid', fgColor: { rgb: 'DEEAF1' } }; // light blue (info labels)
-        const whiteFill   = { patternType: 'solid', fgColor: { rgb: 'FFFFFF' } };
-        const whiteFont   = { name: 'Arial', sz: 10, color: { rgb: 'FFFFFF' }, bold: true };
-        const boldFont    = { name: 'Arial', sz: 10, bold: true };
-        const normalFont  = { name: 'Arial', sz: 10 };
-        const centerAlign = { horizontal: 'center', vertical: 'center', wrapText: true };
-        const rightAlign  = { horizontal: 'right',  vertical: 'center' };
-        const leftAlign   = { horizontal: 'left',   vertical: 'center', wrapText: true };
+        // ── Color constants (exact from sample) ──
+        const NAVY  = '1F3864', BLUE = '2E5090', LBLUE = 'DEEAF1';
+        const WHITE = 'FFFFFF', F2   = 'F2F2F2', BDD   = 'BDD7EE';
+        const GREY  = '666666', DGREY= '444444';
 
-        const cell = (v, font, fill, alignment, numFmt) => {
-            const t = typeof v === 'number' ? 'n' : (v instanceof Date ? 'd' : 's');
-            const c = { v, t, s: {} };
-            if (font)      c.s.font = font;
-            if (fill)      c.s.fill = fill;
-            if (alignment) c.s.alignment = alignment;
-            if (numFmt)    c.s.numFmt = numFmt;
-            if (v instanceof Date) { c.t = 'n'; c.v = this._excelDate(v); }
-            return c;
+        // ── Border styles ──
+        const T  = { style: 'thin'   };
+        const M  = { style: 'medium' };
+        const bdr = (t,b,l,r) => ({ top:t||null, bottom:b||null, left:l||null, right:r||null });
+
+        // ── Fill ──
+        const fx = (rgb) => rgb ? { patternType:'solid', fgColor:{ rgb } } : undefined;
+
+        // ── Font ──
+        const ft = (sz=10, bold=false, italic=false, color=null) => {
+            const f = { name:'Arial', sz, bold, italic };
+            if (color) f.color = { rgb: color };
+            return f;
         };
 
-        const setCell = (addr, c) => { ws[addr] = c; };
+        // ── Alignment ──
+        const al = (h='left', v='center', wrap=false) => ({ horizontal:h, vertical:v, wrapText:wrap });
 
-        // ── Title row (B2) merged B2:F2 ──
-        setCell('B2', cell('DAILY TIME REPORT\nOn-the-Job Training',
-            { name: 'Arial', sz: 16, bold: true, color: { rgb: 'FFFFFF' } },
-            headerFill,
-            { horizontal: 'center', vertical: 'center', wrapText: true }
-        ));
+        // ── Cell builder ──
+        const sc = (addr, v, opts = {}) => {
+            const { font, fill, align, border, numFmt, formula } = opts;
+            const t = formula ? 'n' : (typeof v === 'number' ? 'n' : (v instanceof Date ? 'n' : 's'));
+            const cell = formula ? { f: formula, t:'n' } : { v, t };
+            cell.s = {};
+            if (font)   cell.s.font = font;
+            if (fill)   cell.s.fill = fill;
+            if (align)  cell.s.alignment = align;
+            if (border) cell.s.border = border;
+            if (numFmt) cell.s.numFmt = numFmt;
+            if (v instanceof Date) { cell.t = 'n'; cell.v = this._dateSerial(v); }
+            ws[addr] = cell;
+        };
 
-        // ── Info section rows 4-7 ──
-        const infoRows = [
-            ['B4', 'Name:',                   'C4', this.info.name || ''],
-            ['E4', 'Required OJT Hours:',     'F4', this.hoursNeeded],
-            ['B5', 'School / University:',    'C5', this.info.school || ''],
-            ['E5', 'Total Hours Rendered:',   'F5', parseFloat(this.getTotalHours())],
-            ['B6', 'Company / Department:',   'C6', this.info.company || ''],
-            ['B7', 'Period Covered:',         'C7', this.info.period || ''],
-        ];
+        // ── Sidebar blue cells for A and G columns (data rows 9-34) ──
+        for (let r = 9; r <= 34; r++) {
+            ws[`A${r}`] = { v: null, t:'s', s:{ font: ft(11), fill: fx(BLUE), border: bdr(T,T,T,T) } };
+            ws[`G${r}`] = { v: null, t:'s', s:{ font: ft(11), fill: fx(BLUE), border: bdr(T,T,T,T) } };
+        }
 
-        infoRows.forEach(([la, lv, va, vv]) => {
-            setCell(la, cell(lv, boldFont, labelFill, rightAlign));
-            const isNum = typeof vv === 'number';
-            setCell(va, cell(vv, isNum ? boldFont : normalFont, whiteFill, isNum ? centerAlign : leftAlign));
+        // ── ROW 2: Title ──
+        sc('B2', 'DAILY TIME REPORT\nOn-the-Job Training', {
+            font: ft(16, true, false, WHITE), fill: fx(NAVY),
+            align: al('center','center',true), border: bdr(M,null,M,M)
         });
 
-        // ── Column headers row 9 ──
-        ['B9','C9','D9','E9','F9'].forEach((addr, i) => {
-            const labels = ['No.', 'Date', 'Time In', 'Time Out', 'Hours Rendered'];
-            setCell(addr, cell(labels[i], whiteFont, colHdrFill, centerAlign));
+        // ── ROW 4 ──
+        sc('B4','Name:',{font:ft(10,true,false,NAVY),fill:fx(LBLUE),align:al('right'),border:bdr(T,T,M,T)});
+        sc('C4', this.info.name||'', {font:ft(),fill:fx(WHITE),align:al('left'),border:bdr(null,T,null,null)});
+        sc('E4','Required OJT Hours:',{font:ft(10,true,false,NAVY),fill:fx(LBLUE),align:al('right'),border:bdr(T,T,T,T)});
+        sc('F4', this.hoursNeeded, {font:ft(),align:al('center'),border:bdr(null,T,null,M)});
+
+        // ── ROW 5 ──
+        sc('B5','School / University:',{font:ft(10,true,false,NAVY),fill:fx(LBLUE),align:al('right'),border:bdr(T,T,M,T)});
+        sc('C5', this.info.school||'', {font:ft(),fill:fx(WHITE),align:al('left','center',true),border:bdr(null,T,null,null)});
+        sc('E5','Total Hours Rendered:',{font:ft(10,true,false,NAVY),fill:fx(LBLUE),align:al('right'),border:bdr(T,T,T,T)});
+        ws['F5'] = { f:'F36', t:'n', s:{ font:ft(10,true,false,NAVY), alignment:al('center'), border:bdr(null,T,null,M), numFmt:'[h]:mm' } };
+
+        // ── ROW 6 ──
+        sc('B6','Company / Department:',{font:ft(10,true,false,NAVY),fill:fx(LBLUE),align:al('right'),border:bdr(T,T,M,T)});
+        sc('C6', this.info.company||'', {font:ft(),fill:fx(WHITE),align:al('left'),border:bdr(null,T,null,null)});
+        sc('E6', null, {font:ft(10,true,false,NAVY),fill:fx(LBLUE),align:al('right'),border:bdr(T,T,T,T)});
+
+        // ── ROW 7 ──
+        sc('B7','Period Covered:',{font:ft(10,true,false,NAVY),fill:fx(LBLUE),align:al('right'),border:bdr(T,T,M,T)});
+        sc('C7', this.info.period||'', {font:ft(),fill:fx(WHITE),align:al('left'),border:bdr(null,T,null,null)});
+        sc('E7', null, {font:ft(10,true,false,NAVY),fill:fx(LBLUE),align:al('right'),border:bdr(T,T,T,T)});
+
+        // ── ROW 9: Column headers ──
+        const hdrs = { A9:'', B9:'No.', C9:'Date', D9:'Time In', E9:'Time Out', F9:'Hours Rendered', G9:'' };
+        const hdrBdrs = {
+            A9:bdr(T,T,T,T), B9:bdr(T,T,M,T), C9:bdr(T,T,T,T),
+            D9:bdr(T,T,T,T), E9:bdr(T,T,T,T), F9:bdr(T,T,T,M), G9:bdr(T,T,T,T)
+        };
+        Object.entries(hdrs).forEach(([addr, val]) => {
+            sc(addr, val||null, { font:ft(10,true,false,WHITE), fill:fx(BLUE), align:al('center'), border:hdrBdrs[addr] });
         });
 
-        // ── Data rows 10 onwards ──
-        const dataStart = 10;
-        this.entries.forEach((entry, i) => {
-            const r = dataStart + i;
-            setCell(`B${r}`, cell(i + 1, normalFont, null, centerAlign));
-            setCell(`C${r}`, cell(this.parseDate(entry.date), normalFont, null, centerAlign, 'mmm-dd-yyyy'));
-            setCell(`D${r}`, cell(this.convertTo12Hour(entry.timeIn), normalFont, null, centerAlign));
-            setCell(`E${r}`, cell(this.convertTo12Hour(entry.timeOut), normalFont, null, centerAlign));
-            setCell(`F${r}`, cell(entry.hours, normalFont, null, centerAlign, '0.00'));
-        });
+        // ── ROWS 10–34: 25 data rows ──
+        const entryMap = {};
+        this.entries.forEach((e, i) => { entryMap[i+1] = e; });
 
-        const lastDataRow = dataStart + this.entries.length - 1;
-        const noteRow   = lastDataRow + 2;
-        const totalRow  = lastDataRow + 3;
-        const certRow   = lastDataRow + 6;
-        const supRow    = certRow + 3;
+        for (let rowNum = 1; rowNum <= 25; rowNum++) {
+            const r = 9 + rowNum;
+            const even = rowNum % 2 === 0;
+            const rFill = even ? F2 : WHITE;
 
-        // ── Footnote ──
-        setCell(`B${noteRow}`, cell(
-            '* Hours rendered are net of break time.',
-            { name: 'Arial', sz: 9, italic: true, color: { rgb: '666666' } },
-            null, leftAlign
-        ));
+            // B: No.
+            sc(`B${r}`, rowNum, { font:ft(9,false,false,GREY), fill:fx(rFill), align:al('center'), border:bdr(T,T,M,T) });
 
-        // ── Total ──
-        setCell(`B${totalRow}`, cell('TOTAL HOURS RENDERED', boldFont, null, leftAlign));
-        setCell(`F${totalRow}`, cell(parseFloat(this.getTotalHours()), boldFont, null, centerAlign, '0.00'));
+            const e = entryMap[rowNum];
+            if (e) {
+                // C: Date
+                const d = new Date(e.date + 'T00:00:00');
+                ws[`C${r}`] = { v: this._dateSerial(d), t:'n', s:{ font:ft(), fill:fx(WHITE), alignment:al('center'), border:bdr(T,T,T,T), numFmt:'mmm\-dd\-yyyy' } };
 
-        // ── Certified Correct ──
-        setCell(`B${certRow}`, cell('Certified Correct:', boldFont, null, leftAlign));
+                // D: Time In
+                const [ih,im] = e.timeIn.split(':').map(Number);
+                ws[`D${r}`] = { v: (ih*60+im)/1440, t:'n', s:{ font:ft(), fill:fx(WHITE), alignment:al('center'), border:bdr(T,T,T,T), numFmt:'h:MM AM/PM' } };
 
-        // ── Supervisor signature block ──
-        const supName  = this.info.supervisor || '________________________________';
-        const supTitle = this.info.supervisorTitle || '';
-        setCell(`C${supRow}`,     cell(supName,  boldFont,  null, centerAlign));
-        setCell(`C${supRow + 1}`, cell(supTitle, normalFont, null, centerAlign));
-        setCell(`C${supRow + 2}`, cell('OJT Supervisor / Immediate Head', normalFont, null, centerAlign));
-        setCell(`C${supRow + 3}`, cell('Date: ___________________________', normalFont, null, leftAlign));
+                // E: Time Out
+                const [oh,om] = e.timeOut.split(':').map(Number);
+                ws[`E${r}`] = { v: (oh*60+om)/1440, t:'n', s:{ font:ft(), fill:fx(WHITE), alignment:al('center'), border:bdr(T,T,T,T), numFmt:'h:MM AM/PM' } };
+            } else {
+                const eF = even ? F2 : WHITE;
+                ['C','D','E'].forEach(col => {
+                    ws[`${col}${r}`] = { v:'', t:'s', s:{ font:ft(), fill:fx(eF), alignment:al('center'), border:bdr(T,T,T,T) } };
+                });
+            }
 
-        // ── Merges ──
-        const maxRow = supRow + 4;
+            // F: Hours formula
+            ws[`F${r}`] = { f:`IF(AND(D${r}<>"",E${r}<>""),MIN(E${r}-D${r}-TIME(1,0,0),TIME(8,0,0)),"")`, t:'n',
+                s:{ font:ft(), fill:fx(rFill), alignment:al('center'), border:bdr(T,T,T,M), numFmt:'[h]:mm' } };
+        }
+
+        // ── ROW 35: Footnote ──
+        sc('B35', '* Hours rendered are computed net of 1-hour lunch break, capped at 8 hours/day.',
+            { font:ft(8,false,true,GREY), align:al('left'), border:bdr(null,null,M,M) });
+
+        // ── ROW 36: Total ──
+        sc('B36', 'TOTAL HOURS RENDERED', { font:ft(11,true,false,WHITE), fill:fx(NAVY), align:al('right'), border:bdr(null,null,M,null) });
+        ws['F36'] = { f:'SUM(F10:F34)', t:'n', s:{ font:ft(11,true,false,WHITE), fill:fx(NAVY), alignment:al('center'), border:bdr(T,T,T,M), numFmt:'[h]:mm' } };
+
+        // ── ROW 39: Certified Correct ──
+        sc('B39', 'Certified Correct:', { font:ft(10,true,false,NAVY), align:al('left'), border:bdr(null,null,M,M) });
+
+        // ── ROW 41: Signature box ──
+        ws['C41'] = { v:'', t:'s', s:{ fill:fx(LBLUE), border:bdr(null,M,null,null) } };
+
+        // ── ROW 42: Supervisor name ──
+        sc('C42', this.info.supervisor||'', { font:ft(9,false,false,DGREY), align:al('center') });
+
+        // ── ROW 43: Supervisor title ──
+        sc('C43', this.info.supervisorTitle||'', { font:ft(9,false,false,DGREY), align:al('center') });
+
+        // ── ROW 44: Role label ──
+        sc('C44', 'OJT Supervisor / Immediate Head', { font:ft(10,true,false,NAVY), fill:fx(BDD), align:al('center') });
+
+        // ── ROW 45: Date ──
+        sc('C45', 'Date: ___________________________', { font:ft(9,false,false,NAVY), align:al('left') });
+
+        // ── Merges (exact from sample) ──
         ws['!merges'] = [
-            { s: { r: 1, c: 1 }, e: { r: 1, c: 5 } },                           // B2:F2 title
-            { s: { r: 3, c: 2 }, e: { r: 3, c: 3 } },                           // C4:D4
-            { s: { r: 4, c: 2 }, e: { r: 4, c: 3 } },                           // C5:D5
-            { s: { r: 5, c: 2 }, e: { r: 5, c: 3 } },                           // C6:D6
-            { s: { r: 6, c: 2 }, e: { r: 6, c: 3 } },                           // C7:D7
-            { s: { r: noteRow - 1, c: 1 }, e: { r: noteRow - 1, c: 5 } },       // note row
-            { s: { r: totalRow - 1, c: 1 }, e: { r: totalRow - 1, c: 4 } },     // total label
-            { s: { r: certRow - 1, c: 1 }, e: { r: certRow - 1, c: 5 } },       // certified
-            { s: { r: supRow - 1, c: 2 }, e: { r: supRow - 1, c: 4 } },         // sup name
-            { s: { r: supRow, c: 2 }, e: { r: supRow, c: 4 } },                 // sup title
-            { s: { r: supRow + 1, c: 2 }, e: { r: supRow + 1, c: 4 } },         // sup role
-            { s: { r: supRow + 2, c: 2 }, e: { r: supRow + 2, c: 3 } },         // date line
+            {s:{r:1,c:1},e:{r:1,c:5}},   // B2:F2
+            {s:{r:3,c:2},e:{r:3,c:3}},   // C4:D4
+            {s:{r:4,c:2},e:{r:4,c:3}},   // C5:D5
+            {s:{r:5,c:2},e:{r:5,c:3}},   // C6:D6
+            {s:{r:6,c:2},e:{r:6,c:3}},   // C7:D7
+            {s:{r:34,c:1},e:{r:34,c:5}}, // B35:F35
+            {s:{r:35,c:1},e:{r:35,c:4}}, // B36:E36
+            {s:{r:38,c:1},e:{r:38,c:5}}, // B39:F39
+            {s:{r:40,c:2},e:{r:40,c:4}}, // C41:E41
+            {s:{r:41,c:2},e:{r:41,c:4}}, // C42:E42
+            {s:{r:42,c:2},e:{r:42,c:4}}, // C43:E43
+            {s:{r:43,c:2},e:{r:43,c:4}}, // C44:E44
+            {s:{r:44,c:2},e:{r:44,c:3}}, // C45:D45
         ];
 
-        // ── Column widths ──
+        // ── Column widths (exact from sample) ──
         ws['!cols'] = [
-            { wch: 5 },   // A
-            { wch: 22 },  // B
-            { wch: 18 },  // C
-            { wch: 16 },  // D
-            { wch: 21 },  // E
-            { wch: 18 },  // F
-            { wch: 5 },   // G
+            {wch:5},{wch:22.14},{wch:18},{wch:16},{wch:21.14},{wch:18},{wch:5}
         ];
 
-        // ── Row heights ──
-        ws['!rows'] = [];
-        ws['!rows'][0] = { hpt: 7.5 };   // row 1
-        ws['!rows'][1] = { hpt: 45 };    // row 2 title
-        ws['!rows'][2] = { hpt: 9.75 };  // row 3 spacer
-        for (let i = 3; i <= 7; i++) ws['!rows'][i] = { hpt: 20 };
-        ws['!rows'][8] = { hpt: 28 };    // col headers
+        // ── Row heights (exact from sample) ──
+        ws['!rows'] = [
+            {hpt:7.5},{hpt:45},{hpt:9.75},{hpt:18},{hpt:30.6},
+            {hpt:18},{hpt:18},{hpt:9.75},{hpt:27.75}
+        ];
+        for (let i = 0; i < 25; i++) ws['!rows'].push({hpt:18});
+        ws['!rows'].push({hpt:15.75},{hpt:21.75},{hpt:13.5},{hpt:13.5},
+            {hpt:13.5},{hpt:13.5},{hpt:36},{hpt:13.5},{hpt:13.5},{hpt:18},{hpt:13.5},{hpt:7.5});
 
-        // ── Sheet ref ──
-        ws['!ref'] = `A1:G${maxRow}`;
+        ws['!ref'] = 'A1:G46';
 
-        XLSX.utils.book_append_sheet(wb, ws, 'Daily Time Report');
-
-        const filename = `daily_time_report_${(this.info.name || 'export').replace(/\s+/g, '_').toUpperCase()}_${new Date().toISOString().split('T')[0]}.xlsx`;
-        XLSX.writeFile(wb, filename, { bookType: 'xlsx', type: 'binary', cellStyles: true });
+        X.utils.book_append_sheet(wb, ws, 'Daily Time Report');
+        const filename = `daily_time_report_${(this.info.name||'export').replace(/\s+/g,'_').toUpperCase()}_${new Date().toISOString().split('T')[0]}.xlsx`;
+        X.writeFile(wb, filename, { bookType:'xlsx', type:'binary', cellStyles:true });
         this.showNotification('Exported to Excel!', 'success');
     }
 
-    // Convert JS Date to Excel serial number
-    _excelDate(date) {
+    _dateSerial(date) {
         const epoch = new Date(1899, 11, 30);
-        return (date - epoch) / (24 * 60 * 60 * 1000);
+        return (date - epoch) / 86400000;
     }
 
-    // ---- Clear All ----
+        // ---- Clear All ----
     async clearAll() {
         if (confirm('Delete ALL entries? This cannot be undone.')) {
             this.entries = [];
