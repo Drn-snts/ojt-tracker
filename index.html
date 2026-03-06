@@ -23,12 +23,10 @@
                 <h1 class="auth-title">OJT Tracker</h1>
                 <p class="auth-sub">Track your training hours like a pro</p>
             </div>
-
             <div class="auth-tabs">
                 <button class="auth-tab active" id="loginTab" onclick="switchTab('login')">Sign In</button>
                 <button class="auth-tab" id="signupTab" onclick="switchTab('signup')">Sign Up</button>
             </div>
-
             <!-- Login Form -->
             <div id="loginForm" class="auth-form">
                 <div class="auth-field">
@@ -43,7 +41,6 @@
                 <button class="auth-btn" id="loginBtn" onclick="handleLogin()">Sign In</button>
                 <p class="auth-forgot" onclick="handleForgotPassword()">Forgot password?</p>
             </div>
-
             <!-- Signup Form -->
             <div id="signupForm" class="auth-form hidden">
                 <div class="auth-field">
@@ -73,6 +70,7 @@
     <!-- MAIN APP -->
     <div id="appScreen" class="hidden">
     <div class="container">
+
         <header class="header">
             <div class="header-content">
                 <div class="logo-section">
@@ -92,7 +90,7 @@
                             <label class="hours-label">Target Hours:</label>
                             <div class="hours-input-group">
                                 <input type="number" id="hoursNeeded" class="hours-input" min="0">
-                                <button class="btn btn-small btn-header-set" id="updateHours">Set</button>
+                                <button class="btn-header-set btn-small" id="updateHours">Set</button>
                             </div>
                         </div>
                     </div>
@@ -108,8 +106,41 @@
         </header>
 
         <main class="main-content">
+
+            <!-- PROFILE / REPORT INFO -->
+            <section class="card info-card">
+                <h2 class="section-title"><i class="bi bi-person-vcard" style="color:var(--primary-light)"></i> Report Information</h2>
+                <div class="info-grid">
+                    <div class="info-group">
+                        <label for="infoName"><i class="bi bi-person"></i> Name</label>
+                        <input type="text" id="infoName" class="info-input" placeholder="Your full name">
+                    </div>
+                    <div class="info-group">
+                        <label for="infoSchool"><i class="bi bi-building"></i> School / University</label>
+                        <input type="text" id="infoSchool" class="info-input" placeholder="Your school or university">
+                    </div>
+                    <div class="info-group">
+                        <label for="infoCompany"><i class="bi bi-briefcase"></i> Company / Department</label>
+                        <input type="text" id="infoCompany" class="info-input" placeholder="Company and department">
+                    </div>
+                    <div class="info-group">
+                        <label for="infoPeriod"><i class="bi bi-calendar-range"></i> Period Covered</label>
+                        <input type="text" id="infoPeriod" class="info-input" placeholder="e.g. Month of February">
+                    </div>
+                    <div class="info-group">
+                        <label for="infoSupervisor"><i class="bi bi-person-badge"></i> Supervisor Name</label>
+                        <input type="text" id="infoSupervisor" class="info-input" placeholder="Supervisor's full name">
+                    </div>
+                    <div class="info-group">
+                        <label for="infoSupervisorTitle"><i class="bi bi-award"></i> Supervisor Title / Role</label>
+                        <input type="text" id="infoSupervisorTitle" class="info-input" placeholder="e.g. QA Practice Lead">
+                    </div>
+                </div>
+            </section>
+
+            <!-- ADD ENTRY -->
             <section class="card input-card">
-                <h2 class="section-title">Add New Entry</h2>
+                <h2 class="section-title"><i class="bi bi-plus-square" style="color:var(--primary-light)"></i> Add New Entry</h2>
                 <form class="entry-form" id="entryForm">
                     <div class="form-row">
                         <div class="form-group">
@@ -137,6 +168,7 @@
                 </form>
             </section>
 
+            <!-- STATS -->
             <section class="stats-grid">
                 <div class="stat-card stat-card-info">
                     <div class="stat-header"><h3>Rendered</h3><span class="stat-icon"><i class="bi bi-check-circle-fill"></i></span></div>
@@ -155,6 +187,7 @@
                 </div>
             </section>
 
+            <!-- PROGRESS -->
             <section class="card progress-card">
                 <div class="progress-header">
                     <h2 class="section-title">Progress</h2>
@@ -168,10 +201,11 @@
                 <p class="progress-info">Keep pushing! You're making great progress!</p>
             </section>
 
+            <!-- TABLE -->
             <section class="card table-card">
                 <div class="table-section-header">
                     <h2 class="section-title">Your Entries</h2>
-                    <button type="button" id="duplicateBtn" class="btn btn-secondary btn-duplicate">
+                    <button type="button" id="duplicateBtn" class="btn btn-secondary">
                         <i class="bi bi-copy"></i> Duplicate Last
                     </button>
                 </div>
@@ -179,6 +213,7 @@
                     <table id="hoursTable" class="entries-table">
                         <thead>
                             <tr>
+                                <th>No.</th>
                                 <th>Date</th>
                                 <th>Time In</th>
                                 <th>Time Out</th>
@@ -190,28 +225,28 @@
                         </thead>
                         <tbody id="tableBody">
                             <tr class="empty-state">
-                                <td colspan="7" class="text-center"><p><i class="bi bi-inbox"></i> No entries yet. Add your first entry!</p></td>
+                                <td colspan="8"><i class="bi bi-inbox"></i><br>No entries yet. Add your first entry!</td>
                             </tr>
                         </tbody>
                     </table>
                 </div>
                 <div class="table-footer">
                     <div class="total-row">
-                        <span class="total-label">Total Hours:</span>
+                        <span class="total-label">Total Net Hours:</span>
                         <span class="total-value" id="totalHours">0.00</span>
                     </div>
                 </div>
             </section>
 
+            <!-- ACTIONS -->
             <section class="actions-section">
-                <button id="exportBtn" class="btn btn-secondary"><i class="bi bi-download"></i> Export to CSV</button>
+                <button id="exportBtn" class="btn btn-secondary"><i class="bi bi-file-earmark-excel"></i> Export to Excel</button>
                 <button id="clearBtn" class="btn btn-danger"><i class="bi bi-trash3"></i> Clear All</button>
             </section>
+
         </main>
 
-        <footer class="footer">
-            <p>Made with <i class="bi bi-heart-fill"></i> for your OJT journey &bull; v3.0</p>
-        </footer>
+
     </div>
     </div>
 

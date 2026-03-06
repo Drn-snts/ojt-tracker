@@ -1,5 +1,5 @@
 // ============================================================
-//  FIREBASE CONFIG — paste your own config here
+//  FIREBASE CONFIG
 // ============================================================
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import {
@@ -32,7 +32,7 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 
 // ============================================================
-//  AUTH HELPERS — exposed to window for onclick handlers
+//  AUTH HELPERS
 // ============================================================
 window.switchTab = (tab) => {
     document.getElementById('loginForm').classList.toggle('hidden', tab !== 'login');
@@ -46,20 +46,13 @@ window.handleLogin = async () => {
     const email = document.getElementById('loginEmail').value.trim();
     const password = document.getElementById('loginPassword').value;
     const btn = document.getElementById('loginBtn');
-
-    if (!email || !password) {
-        showAuthError('loginError', 'Please fill in all fields.');
-        return;
-    }
-
-    btn.disabled = true;
-    btn.textContent = 'Signing in...';
+    if (!email || !password) { showAuthError('loginError', 'Please fill in all fields.'); return; }
+    btn.disabled = true; btn.textContent = 'Signing in...';
     try {
         await signInWithEmailAndPassword(auth, email, password);
     } catch (e) {
         showAuthError('loginError', friendlyError(e.code));
-        btn.disabled = false;
-        btn.textContent = 'Sign In';
+        btn.disabled = false; btn.textContent = 'Sign In';
     }
 };
 
@@ -68,39 +61,18 @@ window.handleSignup = async () => {
     const email = document.getElementById('signupEmail').value.trim();
     const password = document.getElementById('signupPassword').value;
     const btn = document.getElementById('signupBtn');
-
-    if (!name || !email || !password) {
-        showAuthError('signupError', 'Please fill in all fields.');
-        return;
-    }
-
-    // Password validation
-    if (password.length < 6) {
-        showAuthError('signupError', 'Password must be at least 6 characters.');
-        return;
-    }
-    if (!/[a-z]/.test(password)) {
-        showAuthError('signupError', 'Password must include at least 1 lowercase letter.');
-        return;
-    }
-    if (!/[A-Z]/.test(password)) {
-        showAuthError('signupError', 'Password must include at least 1 uppercase letter.');
-        return;
-    }
-    if (!/[0-9]/.test(password)) {
-        showAuthError('signupError', 'Password must include at least 1 number.');
-        return;
-    }
-
-    btn.disabled = true;
-    btn.textContent = 'Creating account...';
+    if (!name || !email || !password) { showAuthError('signupError', 'Please fill in all fields.'); return; }
+    if (password.length < 6) { showAuthError('signupError', 'Password must be at least 6 characters.'); return; }
+    if (!/[a-z]/.test(password)) { showAuthError('signupError', 'Password must include at least 1 lowercase letter.'); return; }
+    if (!/[A-Z]/.test(password)) { showAuthError('signupError', 'Password must include at least 1 uppercase letter.'); return; }
+    if (!/[0-9]/.test(password)) { showAuthError('signupError', 'Password must include at least 1 number.'); return; }
+    btn.disabled = true; btn.textContent = 'Creating account...';
     try {
         const cred = await createUserWithEmailAndPassword(auth, email, password);
         await updateProfile(cred.user, { displayName: name });
     } catch (e) {
         showAuthError('signupError', friendlyError(e.code));
-        btn.disabled = false;
-        btn.textContent = 'Create Account';
+        btn.disabled = false; btn.textContent = 'Create Account';
     }
 };
 
@@ -109,9 +81,7 @@ window.checkPasswordStrength = (password) => {
         const el = document.getElementById(id);
         if (!el) return;
         const icon = el.querySelector('i');
-        if (icon) {
-            icon.className = passed ? 'bi bi-check-circle' : 'bi bi-x-circle';
-        }
+        if (icon) icon.className = passed ? 'bi bi-check-circle' : 'bi bi-x-circle';
         el.classList.toggle('rule-pass', passed);
     };
     setRule('rule-lower', /[a-z]/.test(password));
@@ -122,16 +92,11 @@ window.checkPasswordStrength = (password) => {
 
 window.handleForgotPassword = async () => {
     const email = document.getElementById('loginEmail').value.trim();
-    if (!email) {
-        showAuthError('loginError', 'Enter your email above first.');
-        return;
-    }
+    if (!email) { showAuthError('loginError', 'Enter your email above first.'); return; }
     try {
         await sendPasswordResetEmail(auth, email);
         showAuthError('loginError', 'Reset email sent! Check your inbox.', true);
-    } catch (e) {
-        showAuthError('loginError', friendlyError(e.code));
-    }
+    } catch (e) { showAuthError('loginError', friendlyError(e.code)); }
 };
 
 window.handleLogout = async () => {
@@ -142,7 +107,7 @@ window.handleLogout = async () => {
 function showAuthError(id, msg, isSuccess = false) {
     const el = document.getElementById(id);
     el.textContent = msg;
-    el.style.color = isSuccess ? '#48bb78' : '#f56565';
+    el.style.color = isSuccess ? '#48bb78' : '#f1948a';
 }
 
 function clearAuthErrors() {
@@ -160,7 +125,7 @@ function friendlyError(code) {
         'auth/invalid-email': 'Please enter a valid email address.',
         'auth/weak-password': 'Password must be at least 6 characters.',
         'auth/too-many-requests': 'Too many attempts. Please try again later.',
-        'auth/popup-closed-by-user': 'Google sign-in was cancelled.',
+        'auth/popup-closed-by-user': 'Sign-in was cancelled.',
         'auth/invalid-credential': 'Invalid email or password.',
     };
     return map[code] || 'Something went wrong. Please try again.';
@@ -171,35 +136,24 @@ function friendlyError(code) {
 // ============================================================
 onAuthStateChanged(auth, async (user) => {
     showLoading(true);
-
     if (user) {
-        // Show app
         document.getElementById('authScreen').classList.add('hidden');
         document.getElementById('appScreen').classList.remove('hidden');
-
-        // Set user display
         const name = user.displayName || user.email.split('@')[0];
         document.getElementById('userDisplayName').textContent = name;
         document.getElementById('userAvatar').textContent = name.charAt(0).toUpperCase();
-
-        // Boot tracker
         window.calculator = new OJTCalculator(user.uid);
         await window.calculator.init();
-
         document.getElementById('logoutBtn').onclick = window.handleLogout;
     } else {
-        // Show auth screen
         document.getElementById('authScreen').classList.remove('hidden');
         document.getElementById('appScreen').classList.add('hidden');
         window.calculator = null;
-
-        // Reset buttons
         const loginBtn = document.getElementById('loginBtn');
         const signupBtn = document.getElementById('signupBtn');
         if (loginBtn) { loginBtn.disabled = false; loginBtn.textContent = 'Sign In'; }
         if (signupBtn) { signupBtn.disabled = false; signupBtn.textContent = 'Create Account'; }
     }
-
     showLoading(false);
 });
 
@@ -216,12 +170,14 @@ class OJTCalculator {
         this.entries = [];
         this.hoursNeeded = 500;
         this.includeWeekends = true;
+        this.info = { name: '', school: '', company: '', period: '', supervisor: '', supervisorTitle: '' };
         this._saveTimer = null;
     }
 
     async init() {
         await this.loadFromFirestore();
         this.initializeEventListeners();
+        this.setupInfoFields();
         this.setupDatePicker();
         this.setupWeekendToggle();
         this.render();
@@ -233,7 +189,8 @@ class OJTCalculator {
             await setDoc(doc(db, 'users', this.userId), {
                 entries: this.entries,
                 hoursNeeded: this.hoursNeeded,
-                includeWeekends: this.includeWeekends
+                includeWeekends: this.includeWeekends,
+                info: this.info
             });
         } catch (e) {
             console.error('Save error:', e);
@@ -241,7 +198,6 @@ class OJTCalculator {
         }
     }
 
-    // Alias so logout can trigger save
     saveDebounced() {
         clearTimeout(this._saveTimer);
         return this.saveToFirestore();
@@ -259,6 +215,7 @@ class OJTCalculator {
                 }));
                 this.hoursNeeded = data.hoursNeeded || 500;
                 this.includeWeekends = data.includeWeekends ?? true;
+                this.info = data.info || { name: '', school: '', company: '', period: '', supervisor: '', supervisorTitle: '' };
             }
         } catch (e) {
             console.error('Load error:', e);
@@ -266,14 +223,30 @@ class OJTCalculator {
         }
     }
 
+    // ---- Info Fields ----
+    setupInfoFields() {
+        const fields = ['infoName', 'infoSchool', 'infoCompany', 'infoPeriod', 'infoSupervisor', 'infoSupervisorTitle'];
+        const keys   = ['name', 'school', 'company', 'period', 'supervisor', 'supervisorTitle'];
+
+        fields.forEach((id, i) => {
+            const el = document.getElementById(id);
+            if (!el) return;
+            el.value = this.info[keys[i]] || '';
+            el.addEventListener('input', () => {
+                this.info[keys[i]] = el.value;
+                clearTimeout(this._saveTimer);
+                this._saveTimer = setTimeout(() => this.saveToFirestore(), 1200);
+            });
+        });
+    }
+
     // ---- Event Listeners ----
     initializeEventListeners() {
         document.getElementById('addBtn').addEventListener('click', () => this.addEntry());
         document.getElementById('duplicateBtn').addEventListener('click', () => this.duplicateEntry());
         document.getElementById('updateHours').addEventListener('click', () => this.updateHoursNeeded());
-        document.getElementById('exportBtn').addEventListener('click', () => this.exportToCSV());
+        document.getElementById('exportBtn').addEventListener('click', () => this.exportToExcel());
         document.getElementById('clearBtn').addEventListener('click', () => this.clearAll());
-
         document.getElementById('timeOut').addEventListener('keypress', (e) => {
             if (e.key === 'Enter') this.addEntry();
         });
@@ -325,15 +298,13 @@ class OJTCalculator {
         return `${month}-${day}-${year}`;
     }
 
-    formatDateCSV(dateString) {
-        const date = new Date(dateString + 'T00:00:00');
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const day = String(date.getDate()).padStart(2, '0');
-        const year = date.getFullYear();
-        return `${month}/${day}/${year}`;
+    // Returns a JS Date object (for Excel serial date)
+    parseDate(dateString) {
+        return new Date(dateString + 'T00:00:00');
     }
 
     convertTo12Hour(timeString) {
+        if (!timeString) return '';
         const [hours, minutes] = timeString.split(':');
         let hour = parseInt(hours);
         const ampm = hour >= 12 ? 'PM' : 'AM';
@@ -376,13 +347,8 @@ class OJTCalculator {
         const breakTimeInput = document.getElementById('breakTime').value;
         const breakMins = breakTimeInput ? Number(parseInt(breakTimeInput)) : 0;
 
-        if (!date || !timeIn || !timeOut) {
-            this.showNotification('Please fill in all fields!', 'error'); return;
-        }
-
-        if (isNaN(breakMins) || breakMins < 0) {
-            this.showNotification('Break time must be a valid number!', 'error'); return;
-        }
+        if (!date || !timeIn || !timeOut) { this.showNotification('Please fill in all fields!', 'error'); return; }
+        if (isNaN(breakMins) || breakMins < 0) { this.showNotification('Break time must be a valid number!', 'error'); return; }
 
         const hours = this.calculateHours(timeIn, timeOut, breakMins);
         if (hours === 0) return;
@@ -401,16 +367,13 @@ class OJTCalculator {
         document.getElementById('timeOut').value = '';
         document.getElementById('breakTime').value = '';
         this.setupDatePicker();
-
         await this.saveToFirestore();
         this.render();
     }
 
-    // ---- Duplicate (inline row) ----
+    // ---- Duplicate ----
     duplicateEntry() {
-        if (this.entries.length === 0) {
-            this.showNotification('No previous entry to duplicate!', 'error'); return;
-        }
+        if (this.entries.length === 0) { this.showNotification('No previous entry to duplicate!', 'error'); return; }
 
         const existing = document.getElementById('pendingRow');
         if (existing) existing.remove();
@@ -428,6 +391,7 @@ class OJTCalculator {
         row.id = 'pendingRow';
         row.classList.add('pending-row');
         row.innerHTML = `
+            <td>—</td>
             <td><input type="date" class="table-input" id="pendingDate" value="${nextDateStr}"></td>
             <td><input type="time" class="table-input" id="pendingTimeIn" value="${lastEntry.timeIn}"></td>
             <td><input type="time" class="table-input" id="pendingTimeOut" value="${lastEntry.timeOut}"></td>
@@ -455,7 +419,6 @@ class OJTCalculator {
         document.getElementById('pendingTimeIn').addEventListener('change', updatePreview);
         document.getElementById('pendingTimeOut').addEventListener('change', updatePreview);
         document.getElementById('pendingBreak').addEventListener('input', updatePreview);
-
         row.scrollIntoView({ behavior: 'smooth', block: 'center' });
         document.getElementById('pendingDate').focus();
         this.showNotification('Edit the row then click Save', 'info');
@@ -466,15 +429,9 @@ class OJTCalculator {
         const timeIn = document.getElementById('pendingTimeIn').value;
         const timeOut = document.getElementById('pendingTimeOut').value;
         const breakMinsInput = document.getElementById('pendingBreak').value;
-        const breakMins = breakMinsInput ? parseInt(breakMinsInput) : 0;
+        const breakMins = breakMinsInput ? Number(parseInt(breakMinsInput)) : 0;
 
-        if (!date || !timeIn || !timeOut) {
-            this.showNotification('Please fill in all fields!', 'error'); return;
-        }
-
-        if (isNaN(breakMins) || breakMins < 0) {
-            this.showNotification('Break time must be a valid number!', 'error'); return;
-        }
+        if (!date || !timeIn || !timeOut) { this.showNotification('Please fill in all fields!', 'error'); return; }
 
         const hours = this.calculateHours(timeIn, timeOut, breakMins);
         if (hours === 0) return;
@@ -485,7 +442,6 @@ class OJTCalculator {
         } else {
             this.entries.push({ date, timeIn, timeOut, breakMins, hours });
         }
-
         this.entries.sort((a, b) => new Date(a.date) - new Date(b.date));
         await this.saveToFirestore();
         this.render();
@@ -493,11 +449,11 @@ class OJTCalculator {
     }
 
     cancelPendingRow() {
-        const row = document.getElementById('pendingRow');
-        if (row) row.remove();
+        const pending = document.getElementById('pendingRow');
+        if (pending) pending.remove();
         if (this.entries.length === 0) {
             document.getElementById('tableBody').innerHTML =
-                '<tr class="empty-state"><td colspan="7" class="text-center"><p><i class="bi bi-inbox"></i> No entries yet. Add your first entry!</p></td></tr>';
+                '<tr class="empty-state"><td colspan="8"><i class="bi bi-inbox"></i><br>No entries yet. Add your first entry!</td></tr>';
         }
     }
 
@@ -523,6 +479,7 @@ class OJTCalculator {
         const breakMins = entry.breakMins || 0;
 
         row.innerHTML = `
+            <td>${index + 1}</td>
             <td><input type="date" class="table-input" id="editDate" value="${entry.date}"></td>
             <td><input type="time" class="table-input" id="editTimeIn" value="${entry.timeIn}"></td>
             <td><input type="time" class="table-input" id="editTimeOut" value="${entry.timeOut}"></td>
@@ -559,13 +516,8 @@ class OJTCalculator {
         const breakMinsInput = document.getElementById('editBreak').value;
         const breakMins = breakMinsInput ? Number(parseInt(breakMinsInput)) : 0;
 
-        if (!date || !timeIn || !timeOut) {
-            this.showNotification('Please fill in all fields!', 'error'); return;
-        }
-
-        if (isNaN(breakMins) || breakMins < 0) {
-            this.showNotification('Break time must be a valid number!', 'error'); return;
-        }
+        if (!date || !timeIn || !timeOut) { this.showNotification('Please fill in all fields!', 'error'); return; }
+        if (isNaN(breakMins) || breakMins < 0) { this.showNotification('Break time must be a valid number!', 'error'); return; }
 
         const hours = this.calculateHours(timeIn, timeOut, breakMins);
         if (hours === 0) return;
@@ -584,17 +536,14 @@ class OJTCalculator {
     getProgress() { return Math.round(Math.min(100, parseFloat(this.getTotalHours()) / this.hoursNeeded * 100)); }
 
     // ---- Render ----
-    render() {
-        this.renderTable();
-        this.updateStats();
-    }
+    render() { this.renderTable(); this.updateStats(); }
 
     renderTable() {
         const tbody = document.getElementById('tableBody');
         tbody.innerHTML = '';
 
         if (this.entries.length === 0) {
-            tbody.innerHTML = '<tr class="empty-state"><td colspan="7" class="text-center"><p>No entries yet. Add your first entry!</p></td></tr>';
+            tbody.innerHTML = '<tr class="empty-state"><td colspan="8"><i class="bi bi-inbox"></i><br>No entries yet. Add your first entry!</td></tr>';
             return;
         }
 
@@ -611,12 +560,12 @@ class OJTCalculator {
                 else breakLabel = `${m} mins`;
             }
 
-            // Gross hours = time diff without break deducted; net = after break
             const grossHours = this.calculateHoursQuiet(entry.timeIn, entry.timeOut, 0)
                 || parseFloat((parseFloat(entry.hours) + (Number(entry.breakMins) / 60)).toFixed(2));
             const netHours = entry.hours;
 
             row.innerHTML = `
+                <td>${index + 1}</td>
                 <td>${this.formatDate(entry.date)}</td>
                 <td>${this.convertTo12Hour(entry.timeIn)}</td>
                 <td>${this.convertTo12Hour(entry.timeOut)}</td>
@@ -645,52 +594,179 @@ class OJTCalculator {
         document.getElementById('progressFill').style.width = progress + '%';
         document.getElementById('progressText').textContent = progress + '%';
         document.getElementById('hoursNeeded').value = this.hoursNeeded;
-
-        const fill = document.getElementById('progressFill');
-        if (progress < 50) fill.style.background = 'linear-gradient(90deg, #667eea 0%, #764ba2 100%)';
-        else if (progress < 80) fill.style.background = 'linear-gradient(90deg, #f093fb 0%, #f5576c 100%)';
-        else fill.style.background = 'linear-gradient(90deg, #4facfe 0%, #00f2fe 100%)';
     }
 
     // ---- Hours Needed ----
     async updateHoursNeeded() {
         const val = parseInt(document.getElementById('hoursNeeded').value);
-        if (isNaN(val) || val <= 0) {
-            this.showNotification('Enter a valid number > 0!', 'error'); return;
-        }
+        if (isNaN(val) || val <= 0) { this.showNotification('Enter a valid number > 0!', 'error'); return; }
         this.hoursNeeded = val;
         await this.saveToFirestore();
         this.render();
         this.showNotification(`Target updated to ${val} hours!`, 'success');
     }
 
-    // ---- Export ----
-    exportToCSV() {
-        if (this.entries.length === 0) {
-            this.showNotification('No entries to export!', 'error'); return;
-        }
-        let csv = 'Date,Time In,Time Out,Break,Total Hours,Net Hours\n';
-        this.entries.forEach(e => {
-            const grossHours = this.calculateHoursQuiet(e.timeIn, e.timeOut, 0)
-                || parseFloat((parseFloat(e.hours) + (Number(e.breakMins) / 60)).toFixed(2));
-            const breakMins = Number(e.breakMins) || 0;
-            let breakLabel = '—';
-            if (breakMins > 0) {
-                const h = Math.floor(breakMins / 60);
-                const m = breakMins % 60;
-                if (h > 0 && m > 0) breakLabel = `${h} hr ${m} mins`;
-                else if (h > 0) breakLabel = `${h} hr`;
-                else breakLabel = `${m} mins`;
-            }
-            csv += `"${this.formatDateCSV(e.date)}","${this.convertTo12Hour(e.timeIn)}","${this.convertTo12Hour(e.timeOut)}","${breakLabel}",${grossHours},${e.hours}\n`;
-        });
-        csv += `\nSummary\nTotal Hours,${this.getTotalHours()}\nTarget,${this.hoursNeeded}\nRemaining,${this.getRemainingHours()}\nProgress,${this.getProgress()}%\n`;
+    // ---- Export to Excel (SheetJS) ----
+    async exportToExcel() {
+        if (this.entries.length === 0) { this.showNotification('No entries to export!', 'error'); return; }
 
-        const a = document.createElement('a');
-        a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
-        a.download = `ojt_tracker_${new Date().toISOString().split('T')[0]}.csv`;
-        a.click();
-        this.showNotification('Exported to CSV!', 'success');
+        // Dynamically load SheetJS
+        if (!window.XLSX) {
+            await new Promise((resolve, reject) => {
+                const s = document.createElement('script');
+                s.src = 'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js';
+                s.onload = resolve; s.onerror = reject;
+                document.head.appendChild(s);
+            });
+        }
+
+        const XLSX = window.XLSX;
+        const wb = XLSX.utils.book_new();
+        const ws = {};
+
+        // ── Colour helpers ──
+        const headerFill  = { patternType: 'solid', fgColor: { rgb: '1F3864' } }; // dark navy (title)
+        const colHdrFill  = { patternType: 'solid', fgColor: { rgb: '2E5090' } }; // blue (col headers)
+        const labelFill   = { patternType: 'solid', fgColor: { rgb: 'DEEAF1' } }; // light blue (info labels)
+        const whiteFill   = { patternType: 'solid', fgColor: { rgb: 'FFFFFF' } };
+        const whiteFont   = { name: 'Arial', sz: 10, color: { rgb: 'FFFFFF' }, bold: true };
+        const boldFont    = { name: 'Arial', sz: 10, bold: true };
+        const normalFont  = { name: 'Arial', sz: 10 };
+        const centerAlign = { horizontal: 'center', vertical: 'center', wrapText: true };
+        const rightAlign  = { horizontal: 'right',  vertical: 'center' };
+        const leftAlign   = { horizontal: 'left',   vertical: 'center', wrapText: true };
+
+        const cell = (v, font, fill, alignment, numFmt) => {
+            const t = typeof v === 'number' ? 'n' : (v instanceof Date ? 'd' : 's');
+            const c = { v, t, s: {} };
+            if (font)      c.s.font = font;
+            if (fill)      c.s.fill = fill;
+            if (alignment) c.s.alignment = alignment;
+            if (numFmt)    c.s.numFmt = numFmt;
+            if (v instanceof Date) { c.t = 'n'; c.v = this._excelDate(v); }
+            return c;
+        };
+
+        const setCell = (addr, c) => { ws[addr] = c; };
+
+        // ── Title row (B2) merged B2:F2 ──
+        setCell('B2', cell('DAILY TIME REPORT\nOn-the-Job Training',
+            { name: 'Arial', sz: 16, bold: true, color: { rgb: 'FFFFFF' } },
+            headerFill,
+            { horizontal: 'center', vertical: 'center', wrapText: true }
+        ));
+
+        // ── Info section rows 4-7 ──
+        const infoRows = [
+            ['B4', 'Name:',                   'C4', this.info.name || ''],
+            ['E4', 'Required OJT Hours:',     'F4', this.hoursNeeded],
+            ['B5', 'School / University:',    'C5', this.info.school || ''],
+            ['E5', 'Total Hours Rendered:',   'F5', parseFloat(this.getTotalHours())],
+            ['B6', 'Company / Department:',   'C6', this.info.company || ''],
+            ['B7', 'Period Covered:',         'C7', this.info.period || ''],
+        ];
+
+        infoRows.forEach(([la, lv, va, vv]) => {
+            setCell(la, cell(lv, boldFont, labelFill, rightAlign));
+            const isNum = typeof vv === 'number';
+            setCell(va, cell(vv, isNum ? boldFont : normalFont, whiteFill, isNum ? centerAlign : leftAlign));
+        });
+
+        // ── Column headers row 9 ──
+        ['B9','C9','D9','E9','F9'].forEach((addr, i) => {
+            const labels = ['No.', 'Date', 'Time In', 'Time Out', 'Hours Rendered'];
+            setCell(addr, cell(labels[i], whiteFont, colHdrFill, centerAlign));
+        });
+
+        // ── Data rows 10 onwards ──
+        const dataStart = 10;
+        this.entries.forEach((entry, i) => {
+            const r = dataStart + i;
+            setCell(`B${r}`, cell(i + 1, normalFont, null, centerAlign));
+            setCell(`C${r}`, cell(this.parseDate(entry.date), normalFont, null, centerAlign, 'mmm-dd-yyyy'));
+            setCell(`D${r}`, cell(this.convertTo12Hour(entry.timeIn), normalFont, null, centerAlign));
+            setCell(`E${r}`, cell(this.convertTo12Hour(entry.timeOut), normalFont, null, centerAlign));
+            setCell(`F${r}`, cell(entry.hours, normalFont, null, centerAlign, '0.00'));
+        });
+
+        const lastDataRow = dataStart + this.entries.length - 1;
+        const noteRow   = lastDataRow + 2;
+        const totalRow  = lastDataRow + 3;
+        const certRow   = lastDataRow + 6;
+        const supRow    = certRow + 3;
+
+        // ── Footnote ──
+        setCell(`B${noteRow}`, cell(
+            '* Hours rendered are net of break time.',
+            { name: 'Arial', sz: 9, italic: true, color: { rgb: '666666' } },
+            null, leftAlign
+        ));
+
+        // ── Total ──
+        setCell(`B${totalRow}`, cell('TOTAL HOURS RENDERED', boldFont, null, leftAlign));
+        setCell(`F${totalRow}`, cell(parseFloat(this.getTotalHours()), boldFont, null, centerAlign, '0.00'));
+
+        // ── Certified Correct ──
+        setCell(`B${certRow}`, cell('Certified Correct:', boldFont, null, leftAlign));
+
+        // ── Supervisor signature block ──
+        const supName  = this.info.supervisor || '________________________________';
+        const supTitle = this.info.supervisorTitle || '';
+        setCell(`C${supRow}`,     cell(supName,  boldFont,  null, centerAlign));
+        setCell(`C${supRow + 1}`, cell(supTitle, normalFont, null, centerAlign));
+        setCell(`C${supRow + 2}`, cell('OJT Supervisor / Immediate Head', normalFont, null, centerAlign));
+        setCell(`C${supRow + 3}`, cell('Date: ___________________________', normalFont, null, leftAlign));
+
+        // ── Merges ──
+        const maxRow = supRow + 4;
+        ws['!merges'] = [
+            { s: { r: 1, c: 1 }, e: { r: 1, c: 5 } },                           // B2:F2 title
+            { s: { r: 3, c: 2 }, e: { r: 3, c: 3 } },                           // C4:D4
+            { s: { r: 4, c: 2 }, e: { r: 4, c: 3 } },                           // C5:D5
+            { s: { r: 5, c: 2 }, e: { r: 5, c: 3 } },                           // C6:D6
+            { s: { r: 6, c: 2 }, e: { r: 6, c: 3 } },                           // C7:D7
+            { s: { r: noteRow - 1, c: 1 }, e: { r: noteRow - 1, c: 5 } },       // note row
+            { s: { r: totalRow - 1, c: 1 }, e: { r: totalRow - 1, c: 4 } },     // total label
+            { s: { r: certRow - 1, c: 1 }, e: { r: certRow - 1, c: 5 } },       // certified
+            { s: { r: supRow - 1, c: 2 }, e: { r: supRow - 1, c: 4 } },         // sup name
+            { s: { r: supRow, c: 2 }, e: { r: supRow, c: 4 } },                 // sup title
+            { s: { r: supRow + 1, c: 2 }, e: { r: supRow + 1, c: 4 } },         // sup role
+            { s: { r: supRow + 2, c: 2 }, e: { r: supRow + 2, c: 3 } },         // date line
+        ];
+
+        // ── Column widths ──
+        ws['!cols'] = [
+            { wch: 5 },   // A
+            { wch: 22 },  // B
+            { wch: 18 },  // C
+            { wch: 16 },  // D
+            { wch: 21 },  // E
+            { wch: 18 },  // F
+            { wch: 5 },   // G
+        ];
+
+        // ── Row heights ──
+        ws['!rows'] = [];
+        ws['!rows'][0] = { hpt: 7.5 };   // row 1
+        ws['!rows'][1] = { hpt: 45 };    // row 2 title
+        ws['!rows'][2] = { hpt: 9.75 };  // row 3 spacer
+        for (let i = 3; i <= 7; i++) ws['!rows'][i] = { hpt: 20 };
+        ws['!rows'][8] = { hpt: 28 };    // col headers
+
+        // ── Sheet ref ──
+        ws['!ref'] = `A1:G${maxRow}`;
+
+        XLSX.utils.book_append_sheet(wb, ws, 'Daily Time Report');
+
+        const filename = `daily_time_report_${(this.info.name || 'export').replace(/\s+/g, '_').toUpperCase()}_${new Date().toISOString().split('T')[0]}.xlsx`;
+        XLSX.writeFile(wb, filename, { bookType: 'xlsx', type: 'binary', cellStyles: true });
+        this.showNotification('Exported to Excel!', 'success');
+    }
+
+    // Convert JS Date to Excel serial number
+    _excelDate(date) {
+        const epoch = new Date(1899, 11, 30);
+        return (date - epoch) / (24 * 60 * 60 * 1000);
     }
 
     // ---- Clear All ----
@@ -707,7 +783,6 @@ class OJTCalculator {
     showNotification(message, type = 'info') {
         const existing = document.querySelector('.notification');
         if (existing) existing.remove();
-
         const n = document.createElement('div');
         n.className = `notification notification-${type}`;
         n.textContent = message;
