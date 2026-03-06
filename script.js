@@ -669,7 +669,12 @@ class OJTCalculator {
         // ── ROW 2: Title ──
         ws.mergeCells('B2:F2');
         const titleCell = ws.getCell('B2');
-        titleCell.value = 'DAILY TIME REPORT\nOn-the-Job Training';
+        titleCell.value = {
+            richText: [
+                { text: 'DAILY TIME REPORT', font: {name:'Arial', size:16, bold:true, color:{argb:'FFFFFFFF'}} },
+                { text: '\nOn-the-Job Training', font: {name:'Arial', size:14, bold:true, color:{argb:'FFFFFFFF'}} }
+            ]
+        };
         titleCell.font = font({size:16, bold:true, color:'FFFFFFFF'});
         titleCell.fill = fillSolid(NAVY);
         titleCell.alignment = align('center','middle',true);
@@ -785,25 +790,28 @@ class OJTCalculator {
 
             const e = entryMap[rowNum];
             if (e) {
-                // C: Date
+                // C: Date — use JS Date object (ExcelJS handles serialization)
                 const cCell = ws.getCell(`C${r}`);
-                cCell.value = new Date(e.date + 'T00:00:00');
+                const dateObj = new Date(e.date + 'T12:00:00');
+                cCell.value = dateObj;
                 cCell.font = font(); cCell.fill = fillSolid(WHITE);
                 cCell.alignment = align('center'); cCell.numFmt = 'mmm-dd-yyyy';
                 setBorder(cCell, thin,thin,thin,thin);
 
-                // D: Time In
+                // D: Time In — fraction of day
                 const dCell = ws.getCell(`D${r}`);
                 const [ih,im] = e.timeIn.split(':').map(Number);
-                dCell.value = new Date(1899,11,30, ih, im, 0);
+                const timeInFrac = (ih * 60 + im) / 1440;
+                dCell.value = timeInFrac;
                 dCell.font = font(); dCell.fill = fillSolid(WHITE);
                 dCell.alignment = align('center'); dCell.numFmt = 'h:MM AM/PM';
                 setBorder(dCell, thin,thin,thin,thin);
 
-                // E: Time Out
+                // E: Time Out — fraction of day
                 const eCell = ws.getCell(`E${r}`);
                 const [oh,om] = e.timeOut.split(':').map(Number);
-                eCell.value = new Date(1899,11,30, oh, om, 0);
+                const timeOutFrac = (oh * 60 + om) / 1440;
+                eCell.value = timeOutFrac;
                 eCell.font = font(); eCell.fill = fillSolid(WHITE);
                 eCell.alignment = align('center'); eCell.numFmt = 'h:MM AM/PM';
                 setBorder(eCell, thin,thin,thin,thin);
