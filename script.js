@@ -70,12 +70,12 @@ window.handleLandingLogin = async () => {
     const errEl = document.getElementById('lLoginError');
     errEl.textContent = '';
     if (!email || !pw) { errEl.textContent = 'Please fill in all fields.'; errEl.style.color = '#ef4444'; return; }
-    btn.disabled = true; btn.textContent = 'Signing in...';
+    btn.disabled = true; btn.innerHTML = '<i class="bi bi-arrow-repeat"></i> Signing in...';
     try {
         await signInWithEmailAndPassword(auth, email, pw);
     } catch (e) {
         errEl.textContent = friendlyError(e.code); errEl.style.color = '#ef4444';
-        btn.disabled = false; btn.textContent = 'Sign In';
+        btn.disabled = false; btn.innerHTML = '<i class="bi bi-box-arrow-in-right"></i> Sign In';
     }
 };
 
@@ -90,13 +90,13 @@ window.handleLandingSignup = async () => {
     if (pw.length < 6 || !/[a-z]/.test(pw) || !/[A-Z]/.test(pw) || !/[0-9]/.test(pw)) {
         errEl.textContent = 'Password must meet all requirements.'; errEl.style.color = '#ef4444'; return;
     }
-    btn.disabled = true; btn.textContent = 'Creating account...';
+    btn.disabled = true; btn.innerHTML = '<i class="bi bi-arrow-repeat"></i> Creating account...';
     try {
         const cred = await createUserWithEmailAndPassword(auth, email, pw);
         await updateProfile(cred.user, { displayName: name });
     } catch (e) {
         errEl.textContent = friendlyError(e.code); errEl.style.color = '#ef4444';
-        btn.disabled = false; btn.textContent = 'Create Account';
+        btn.disabled = false; btn.innerHTML = '<i class="bi bi-person-plus"></i> Create Account — It\'s Free';
     }
 };
 
@@ -162,8 +162,8 @@ onAuthStateChanged(auth, async (user) => {
         window.calculator = null;
         const lb = document.getElementById('lLoginBtn');
         const sb = document.getElementById('lSignupBtn');
-        if (lb) { lb.disabled = false; lb.textContent = 'Sign In'; }
-        if (sb) { sb.disabled = false; sb.textContent = 'Create Account — It\'s Free'; }
+        if (lb) { lb.disabled = false; lb.innerHTML = '<i class="bi bi-box-arrow-in-right"></i> Sign In'; }
+        if (sb) { sb.disabled = false; sb.innerHTML = '<i class="bi bi-person-plus"></i> Create Account — It\'s Free'; }
     }
 
     showLoading(false);
