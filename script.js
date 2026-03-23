@@ -70,12 +70,12 @@ window.handleLandingLogin = async () => {
     const errEl = document.getElementById('lLoginError');
     errEl.textContent = '';
     if (!email || !pw) { errEl.textContent = 'Please fill in all fields.'; errEl.style.color = '#ef4444'; return; }
-    btn.disabled = true; btn.innerHTML = '<i class="bi bi-arrow-repeat"></i> Signing in...';
+    btn.disabled = true; btn.textContent = 'Signing in...';
     try {
         await signInWithEmailAndPassword(auth, email, pw);
     } catch (e) {
         errEl.textContent = friendlyError(e.code); errEl.style.color = '#ef4444';
-        btn.disabled = false; btn.innerHTML = '<i class="bi bi-box-arrow-in-right"></i> Sign In';
+        btn.disabled = false; btn.textContent = 'Sign In';
     }
 };
 
@@ -90,13 +90,13 @@ window.handleLandingSignup = async () => {
     if (pw.length < 6 || !/[a-z]/.test(pw) || !/[A-Z]/.test(pw) || !/[0-9]/.test(pw)) {
         errEl.textContent = 'Password must meet all requirements.'; errEl.style.color = '#ef4444'; return;
     }
-    btn.disabled = true; btn.innerHTML = '<i class="bi bi-arrow-repeat"></i> Creating account...';
+    btn.disabled = true; btn.textContent = 'Creating account...';
     try {
         const cred = await createUserWithEmailAndPassword(auth, email, pw);
         await updateProfile(cred.user, { displayName: name });
     } catch (e) {
         errEl.textContent = friendlyError(e.code); errEl.style.color = '#ef4444';
-        btn.disabled = false; btn.innerHTML = '<i class="bi bi-person-plus"></i> Create Account — It\'s Free';
+        btn.disabled = false; btn.textContent = 'Create Account';
     }
 };
 
@@ -162,8 +162,8 @@ onAuthStateChanged(auth, async (user) => {
         window.calculator = null;
         const lb = document.getElementById('lLoginBtn');
         const sb = document.getElementById('lSignupBtn');
-        if (lb) { lb.disabled = false; lb.innerHTML = '<i class="bi bi-box-arrow-in-right"></i> Sign In'; }
-        if (sb) { sb.disabled = false; sb.innerHTML = '<i class="bi bi-person-plus"></i> Create Account — It\'s Free'; }
+        if (lb) { lb.disabled = false; lb.textContent = 'Sign In'; }
+        if (sb) { sb.disabled = false; sb.textContent = 'Create Account — It\'s Free'; }
     }
 
     showLoading(false);
@@ -950,168 +950,4 @@ class OJTCalculator {
             document.head.appendChild(s);
         });
     }
-
-      <w:r><w:t>${timeTxt}</w:t></w:r>
-    </w:p>
-  </w:tc>
-  <w:tc>
-    <w:tcPr>
-      <w:tcW w:w="3675" w:type="dxa"/>
-      <w:tcBorders><w:top w:val="single" w:sz="18" w:space="0" w:color="000000"/></w:tcBorders>
-      <w:tcMar><w:top w:w="100" w:type="dxa"/><w:left w:w="100" w:type="dxa"/><w:bottom w:w="100" w:type="dxa"/><w:right w:w="100" w:type="dxa"/></w:tcMar>
-      <w:vAlign w:val="center"/>
-    </w:tcPr>
-    <w:p><w:pPr><w:widowControl w:val="0"/><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr>
-      <w:r><w:t xml:space="preserve">${taskTxt}</w:t></w:r>
-    </w:p>
-  </w:tc>
-  <w:tc>
-    <w:tcPr>
-      <w:tcW w:w="2310" w:type="dxa"/>
-      <w:tcBorders><w:top w:val="single" w:sz="18" w:space="0" w:color="000000"/></w:tcBorders>
-      <w:tcMar><w:top w:w="100" w:type="dxa"/><w:left w:w="100" w:type="dxa"/><w:bottom w:w="100" w:type="dxa"/><w:right w:w="100" w:type="dxa"/></w:tcMar>
-      <w:vAlign w:val="center"/>
-    </w:tcPr>
-    <w:p><w:pPr><w:widowControl w:val="0"/><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr>
-      <w:r><w:t>${skillsTxt}</w:t></w:r>
-    </w:p>
-  </w:tc>
-  <w:tc>
-    <w:tcPr>
-      <w:tcW w:w="2010" w:type="dxa"/>
-      <w:tcBorders><w:top w:val="single" w:sz="18" w:space="0" w:color="000000"/></w:tcBorders>
-      <w:tcMar><w:top w:w="100" w:type="dxa"/><w:left w:w="100" w:type="dxa"/><w:bottom w:w="100" w:type="dxa"/><w:right w:w="100" w:type="dxa"/></w:tcMar>
-      <w:vAlign w:val="center"/>
-    </w:tcPr>
-    <w:p><w:pPr><w:widowControl w:val="0"/><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr>
-      <w:r><w:t xml:space="preserve">${problemsTxt}</w:t></w:r>
-    </w:p>
-  </w:tc>
-</w:tr>`;
-        }).join('\n');
-
-        // ── document.xml ──
-        const docXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<w:document xmlns:wpc="http://schemas.microsoft.com/office/word/2010/wordprocessingCanvas"
-  xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-  xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"
-  xmlns:m="http://schemas.openxmlformats.org/officeDocument/2006/math"
-  xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"
-  xmlns:w14="http://schemas.microsoft.com/office/word/2010/wordml"
-  mc:Ignorable="w14">
-  <w:body>
-    <w:p>
-      <w:pPr>
-        <w:jc w:val="center"/>
-        <w:rPr><w:b/><w:bCs/><w:sz w:val="24"/><w:szCs w:val="24"/></w:rPr>
-      </w:pPr>
-      <w:r>
-        <w:rPr><w:b/><w:bCs/><w:sz w:val="24"/><w:szCs w:val="24"/></w:rPr>
-        <w:t>Weekly Accomplishment Report</w:t>
-      </w:r>
-    </w:p>
-    <w:p>
-      <w:r><w:t xml:space="preserve">Name: </w:t></w:r>
-      <w:r><w:rPr><w:u w:val="single"/></w:rPr><w:t>${this._xmlEsc(name)}</w:t></w:r>
-      <w:r><w:t>_____________________________________</w:t></w:r>
-    </w:p>
-    <w:p>
-      <w:r><w:t xml:space="preserve">Inclusive Dates: </w:t></w:r>
-      <w:r><w:rPr><w:u w:val="single"/></w:rPr><w:t xml:space="preserve">${this._xmlEsc(inclusiveDates)}  </w:t></w:r>
-      <w:r><w:t>___________________________</w:t></w:r>
-    </w:p>
-    <w:p>
-      <w:r><w:t xml:space="preserve">Total Number of Hours: </w:t></w:r>
-      <w:r><w:rPr><w:u w:val="single"/></w:rPr><w:t>${this._xmlEsc(totalHours)}</w:t></w:r>
-      <w:r><w:t>______________________</w:t></w:r>
-    </w:p>
-    <w:tbl>
-      <w:tblPr>
-        <w:tblW w:w="10800" w:type="dxa"/>
-        <w:tblBorders>
-          <w:top w:val="single" w:sz="8" w:space="0" w:color="000000"/>
-          <w:left w:val="single" w:sz="8" w:space="0" w:color="000000"/>
-          <w:bottom w:val="single" w:sz="8" w:space="0" w:color="000000"/>
-          <w:right w:val="single" w:sz="8" w:space="0" w:color="000000"/>
-          <w:insideH w:val="single" w:sz="8" w:space="0" w:color="000000"/>
-          <w:insideV w:val="single" w:sz="8" w:space="0" w:color="000000"/>
-        </w:tblBorders>
-        <w:tblLayout w:type="fixed"/>
-      </w:tblPr>
-      <w:tblGrid>
-        <w:gridCol w:w="1260"/>
-        <w:gridCol w:w="1545"/>
-        <w:gridCol w:w="3675"/>
-        <w:gridCol w:w="2310"/>
-        <w:gridCol w:w="2010"/>
-      </w:tblGrid>
-      <!-- HEADER ROW -->
-      <w:tr>
-        <w:tc>
-          <w:tcPr>
-            <w:tcW w:w="1260" w:type="dxa"/>
-            <w:tcBorders><w:bottom w:val="single" w:sz="18" w:space="0" w:color="000000"/></w:tcBorders>
-            <w:tcMar><w:top w:w="100" w:type="dxa"/><w:left w:w="100" w:type="dxa"/><w:bottom w:w="100" w:type="dxa"/><w:right w:w="100" w:type="dxa"/></w:tcMar>
-            <w:vAlign w:val="center"/>
-          </w:tcPr>
-          <w:p><w:pPr><w:widowControl w:val="0"/><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/><w:rPr><w:b/><w:bCs/></w:rPr></w:pPr>
-            <w:r><w:rPr><w:b/><w:bCs/></w:rPr><w:t>Date</w:t></w:r>
-          </w:p>
-        </w:tc>
-        <w:tc>
-          <w:tcPr>
-            <w:tcW w:w="1545" w:type="dxa"/>
-            <w:tcBorders><w:bottom w:val="single" w:sz="18" w:space="0" w:color="000000"/></w:tcBorders>
-            <w:tcMar><w:top w:w="100" w:type="dxa"/><w:left w:w="100" w:type="dxa"/><w:bottom w:w="100" w:type="dxa"/><w:right w:w="100" w:type="dxa"/></w:tcMar>
-            <w:vAlign w:val="center"/>
-          </w:tcPr>
-          <w:p><w:pPr><w:widowControl w:val="0"/><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/><w:rPr><w:b/><w:bCs/></w:rPr></w:pPr>
-            <w:r><w:rPr><w:b/><w:bCs/></w:rPr><w:t>Time-in/ Time-out</w:t></w:r>
-          </w:p>
-        </w:tc>
-        <w:tc>
-          <w:tcPr>
-            <w:tcW w:w="3675" w:type="dxa"/>
-            <w:tcBorders><w:bottom w:val="single" w:sz="18" w:space="0" w:color="000000"/></w:tcBorders>
-            <w:tcMar><w:top w:w="100" w:type="dxa"/><w:left w:w="100" w:type="dxa"/><w:bottom w:w="100" w:type="dxa"/><w:right w:w="100" w:type="dxa"/></w:tcMar>
-            <w:vAlign w:val="center"/>
-          </w:tcPr>
-          <w:p><w:pPr><w:widowControl w:val="0"/><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/><w:rPr><w:b/><w:bCs/></w:rPr></w:pPr>
-            <w:r><w:rPr><w:b/><w:bCs/></w:rPr><w:t>Task Performed/ Key Accomplishments</w:t></w:r>
-          </w:p>
-        </w:tc>
-        <w:tc>
-          <w:tcPr>
-            <w:tcW w:w="2310" w:type="dxa"/>
-            <w:tcBorders><w:bottom w:val="single" w:sz="18" w:space="0" w:color="000000"/></w:tcBorders>
-            <w:tcMar><w:top w:w="100" w:type="dxa"/><w:left w:w="100" w:type="dxa"/><w:bottom w:w="100" w:type="dxa"/><w:right w:w="100" w:type="dxa"/></w:tcMar>
-            <w:vAlign w:val="center"/>
-          </w:tcPr>
-          <w:p><w:pPr><w:widowControl w:val="0"/><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/><w:rPr><w:b/><w:bCs/></w:rPr></w:pPr>
-            <w:r><w:rPr><w:b/><w:bCs/></w:rPr><w:t>Skills Developed</w:t></w:r>
-          </w:p>
-        </w:tc>
-        <w:tc>
-          <w:tcPr>
-            <w:tcW w:w="2010" w:type="dxa"/>
-            <w:tcBorders><w:bottom w:val="single" w:sz="18" w:space="0" w:color="000000"/></w:tcBorders>
-            <w:tcMar><w:top w:w="100" w:type="dxa"/><w:left w:w="100" w:type="dxa"/><w:bottom w:w="100" w:type="dxa"/><w:right w:w="100" w:type="dxa"/></w:tcMar>
-            <w:vAlign w:val="center"/>
-          </w:tcPr>
-          <w:p><w:pPr><w:widowControl w:val="0"/><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/><w:rPr><w:b/><w:bCs/></w:rPr></w:pPr>
-            <w:r><w:rPr><w:b/><w:bCs/></w:rPr><w:t>Problems/ Challenges Encountered</w:t></w:r>
-          </w:p>
-        </w:tc>
-      </w:tr>
-      ${tableRowsXml}
-    </w:tbl>
-    <w:sectPr>
-      <w:pgSz w:w="12240" w:h="15840"/>
-      <w:pgMar w:top="1440" w:right="1440" w:bottom="1440" w:left="1440" w:header="720" w:footer="720" w:gutter="0"/>
-    </w:sectPr>
-  </w:body>
-</w:document>`;
-
-        // ── styles.xml (minimal) ──
-        const stylesXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"
+}
