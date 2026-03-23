@@ -71,9 +71,11 @@ window.handleLandingLogin = async () => {
     errEl.textContent = '';
     if (!email || !pw) { errEl.textContent = 'Please fill in all fields.'; errEl.style.color = '#ef4444'; return; }
     btn.disabled = true; btn.textContent = 'Signing in...';
+    showLoading(true);
     try {
         await signInWithEmailAndPassword(auth, email, pw);
     } catch (e) {
+        showLoading(false);
         errEl.textContent = friendlyError(e.code); errEl.style.color = '#ef4444';
         btn.disabled = false; btn.textContent = 'Sign In';
     }
@@ -91,10 +93,12 @@ window.handleLandingSignup = async () => {
         errEl.textContent = 'Password must meet all requirements.'; errEl.style.color = '#ef4444'; return;
     }
     btn.disabled = true; btn.textContent = 'Creating account...';
+    showLoading(true);
     try {
         const cred = await createUserWithEmailAndPassword(auth, email, pw);
         await updateProfile(cred.user, { displayName: name });
     } catch (e) {
+        showLoading(false);
         errEl.textContent = friendlyError(e.code); errEl.style.color = '#ef4444';
         btn.disabled = false; btn.textContent = 'Create Account';
     }
@@ -124,6 +128,13 @@ function friendlyError(code) {
 }
 
 // ============================================================
+//  LOADING HELPER  (defined early so auth observer can use it)
+// ============================================================
+function showLoading(show) {
+    document.getElementById('loadingOverlay').classList.toggle('hidden', !show);
+}
+
+// ============================================================
 //  SECTION NAVIGATION
 // ============================================================
 window.showSection = (name) => {
@@ -139,8 +150,9 @@ window.showSection = (name) => {
 //  AUTH STATE OBSERVER
 // ============================================================
 onAuthStateChanged(auth, async (user) => {
-    showLoading(true);
     if (user) {
+        // User is already logged in — show loader while fetching their data
+        showLoading(true);
         document.getElementById('landingScreen').classList.add('hidden');
         document.getElementById('appScreen').classList.remove('hidden');
         const name = user.displayName || user.email.split('@')[0];
@@ -152,22 +164,19 @@ onAuthStateChanged(auth, async (user) => {
             if (window.calculator) await window.calculator.saveToFirestore();
             await signOut(auth);
         };
+        showLoading(false);
     } else {
+        // No user — show landing page immediately, never block it
+        showLoading(false);
         document.getElementById('landingScreen').classList.remove('hidden');
         document.getElementById('appScreen').classList.add('hidden');
         window.calculator = null;
-        // Reset login button
         const lb = document.getElementById('lLoginBtn');
         const sb = document.getElementById('lSignupBtn');
         if (lb) { lb.disabled = false; lb.textContent = 'Sign In'; }
         if (sb) { sb.disabled = false; sb.textContent = 'Create Account'; }
     }
-    showLoading(false);
 });
-
-function showLoading(show) {
-    document.getElementById('loadingOverlay').classList.toggle('hidden', !show);
-}
 
 // ============================================================
 //  OJT CALCULATOR CLASS
