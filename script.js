@@ -138,8 +138,12 @@ window.showSection = (name) => {
 // ============================================================
 //  AUTH STATE OBSERVER
 // ============================================================
+let _authResolved = false;
 onAuthStateChanged(auth, async (user) => {
-    showLoading(true);
+    // Only show the loading spinner when a logged-in user is returning
+    // (not on the initial landing page visit where there's no session)
+    if (user) { showLoading(true); }
+
     if (user) {
         document.getElementById('landingScreen').classList.add('hidden');
         document.getElementById('appScreen').classList.remove('hidden');
@@ -156,13 +160,14 @@ onAuthStateChanged(auth, async (user) => {
         document.getElementById('landingScreen').classList.remove('hidden');
         document.getElementById('appScreen').classList.add('hidden');
         window.calculator = null;
-        // Reset login button
         const lb = document.getElementById('lLoginBtn');
         const sb = document.getElementById('lSignupBtn');
         if (lb) { lb.disabled = false; lb.textContent = 'Sign In'; }
-        if (sb) { sb.disabled = false; sb.textContent = 'Create Account'; }
+        if (sb) { sb.disabled = false; sb.textContent = 'Create Account — It\'s Free'; }
     }
+
     showLoading(false);
+    _authResolved = true;
 });
 
 function showLoading(show) {
