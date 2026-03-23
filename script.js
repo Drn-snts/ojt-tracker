@@ -564,8 +564,14 @@ class OJTCalculator {
         const container = document.getElementById('weeklyDaysContainer');
         container.innerHTML = '';
         this._dayRowCount = 0;
-        // Start with 5 day rows (Mon-Fri)
         for (let i = 0; i < 5; i++) this.addDayRow();
+        // Pre-fill student name from profile
+        const nameEl = document.getElementById('wkStudentName');
+        if (nameEl && !nameEl.value && this.profileData.name) nameEl.value = this.profileData.name;
+        const supEl = document.getElementById('wkSupervisorName');
+        if (supEl && !supEl.value && this.profileData.supervisor) supEl.value = this.profileData.supervisor;
+        const roleEl = document.getElementById('wkSupervisorRole');
+        if (roleEl && !roleEl.value && this.profileData.supervisorRole) roleEl.value = this.profileData.supervisorRole;
     }
 
     addDayRow() {
@@ -612,19 +618,23 @@ class OJTCalculator {
     }
 
     async saveWeeklyReport() {
+        const studentName    = document.getElementById('wkStudentName').value.trim();
         const inclusiveDates = document.getElementById('wkInclusiveDates').value.trim();
-        const totalHours = document.getElementById('wkTotalHours').value.trim();
+        const totalHours     = document.getElementById('wkTotalHours').value.trim();
+        const supervisorName = document.getElementById('wkSupervisorName').value.trim();
+        const supervisorRole = document.getElementById('wkSupervisorRole').value.trim();
+        const dateSigned     = document.getElementById('wkDateSigned').value;
+
         if (!inclusiveDates) { this.notify('Please enter inclusive dates!', 'error'); return; }
 
         const days = [];
         document.querySelectorAll('.weekly-day-row').forEach(row => {
             const id = row.id.split('-')[1];
-            const date = document.getElementById(`wkDate-${id}`)?.value || '';
-            const time = document.getElementById(`wkTime-${id}`)?.value.trim() || '';
-            const task = document.getElementById(`wkTask-${id}`)?.value.trim() || '';
-            const skills = document.getElementById(`wkSkills-${id}`)?.value.trim() || '';
+            const date     = document.getElementById(`wkDate-${id}`)?.value || '';
+            const time     = document.getElementById(`wkTime-${id}`)?.value.trim() || '';
+            const task     = document.getElementById(`wkTask-${id}`)?.value.trim() || '';
+            const skills   = document.getElementById(`wkSkills-${id}`)?.value.trim() || '';
             const problems = document.getElementById(`wkProblems-${id}`)?.value.trim() || '';
-            // Only add row if at least date or task is filled
             if (date || task) days.push({ date, time, task, skills, problems });
         });
 
@@ -632,9 +642,12 @@ class OJTCalculator {
 
         const report = {
             id: Date.now(),
-            name: this.profileData.name,
+            studentName: studentName || this.profileData.name,
             inclusiveDates,
             totalHours,
+            supervisorName: supervisorName || this.profileData.supervisor,
+            supervisorRole: supervisorRole || this.profileData.supervisorRole,
+            dateSigned,
             days,
             createdAt: new Date().toISOString()
         };
@@ -647,6 +660,7 @@ class OJTCalculator {
         // Reset form
         document.getElementById('wkInclusiveDates').value = '';
         document.getElementById('wkTotalHours').value = '';
+        document.getElementById('wkDateSigned').value = '';
         this.initWeeklyDays();
     }
 
@@ -668,7 +682,7 @@ class OJTCalculator {
         [...this.weeklyReports].reverse().forEach(report => {
             const item = document.createElement('div');
             item.className = 'weekly-report-item';
-            const rows = report.days.map((d, i) => `
+            const rows = report.days.map(d => `
                 <tr>
                     <td>${d.date ? this.formatDateShort(d.date) : ''}</td>
                     <td>${this.escHtml(d.time)}</td>
@@ -676,11 +690,16 @@ class OJTCalculator {
                     <td class="td-text">${this.escHtml(d.skills)}</td>
                     <td class="td-text">${this.escHtml(d.problems)}</td>
                 </tr>`).join('');
+            const dateSignedFmt = report.dateSigned ? new Date(report.dateSigned + 'T00:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : '';
             item.innerHTML = `
                 <div class="weekly-report-item-header">
                     <div class="weekly-report-meta">
                         <span class="weekly-report-title">Week: ${this.escHtml(report.inclusiveDates)}</span>
-                        <span class="weekly-report-subtitle">${report.totalHours ? 'Total: ' + this.escHtml(report.totalHours) : ''} &bull; ${new Date(report.createdAt).toLocaleDateString()}</span>
+                        <span class="weekly-report-subtitle">
+                            ${report.studentName ? '<i class="bi bi-person"></i> ' + this.escHtml(report.studentName) + ' &nbsp;' : ''}
+                            ${report.totalHours ? '&bull; Total: ' + this.escHtml(report.totalHours) + ' &nbsp;' : ''}
+                            &bull; ${new Date(report.createdAt).toLocaleDateString()}
+                        </span>
                     </div>
                     <div class="weekly-report-actions">
                         <button class="btn btn-sm btn-primary" onclick="window.calculator.exportWeeklyDocx(${report.id})">
@@ -695,8 +714,7 @@ class OJTCalculator {
                     <table class="weekly-report-table">
                         <thead>
                             <tr>
-                                <th>Date</th>
-                                <th>Time-in/<br>Time-out</th>
+                                <th>Date</th><th>Time-in/<br>Time-out</th>
                                 <th>Task Performed/<br>Key Accomplishments</th>
                                 <th>Skills<br>Developed</th>
                                 <th>Problems/<br>Challenges Encountered</th>
@@ -704,7 +722,13 @@ class OJTCalculator {
                         </thead>
                         <tbody>${rows}</tbody>
                     </table>
-                </div>`;
+                </div>
+                ${report.supervisorName ? `<div style="padding:12px 16px;border-top:1px solid var(--border);font-size:12px;color:var(--text-2);">
+                    <i class="bi bi-patch-check" style="color:var(--red)"></i>
+                    <strong>Verified by:</strong> ${this.escHtml(report.supervisorName)}
+                    ${report.supervisorRole ? ' — ' + this.escHtml(report.supervisorRole) : ''}
+                    ${dateSignedFmt ? ' &nbsp; | &nbsp; Date: ' + dateSignedFmt : ''}
+                </div>` : ''}`;
             container.appendChild(item);
         });
     }
@@ -714,52 +738,204 @@ class OJTCalculator {
     }
 
     // ====================================================================
-    //  EXPORT WEEKLY REPORT → DOCX
-    //  Template exactly matches Weekly_Accomplishment_Report sample
+    //  EXPORT WEEKLY REPORT → DOCX  (matches template + Verified By block)
     // ====================================================================
     async exportWeeklyDocx(reportId) {
         const report = this.weeklyReports.find(r => r.id === reportId);
         if (!report) { this.notify('Report not found!', 'error'); return; }
 
-        // Load JSZip from CDN
         if (!window.JSZip) {
             await this._loadScript('https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js');
         }
 
-        const name = report.name || this.profileData.name || '';
+        const name           = report.studentName || this.profileData.name || '';
         const inclusiveDates = report.inclusiveDates || '';
-        const totalHours = report.totalHours || '';
-        const days = report.days || [];
+        const totalHours     = report.totalHours || '';
+        const supervisorName = report.supervisorName || '';
+        const supervisorRole = report.supervisorRole || '';
+        const days           = report.days || [];
 
-        // ── Build table rows XML ──
+        // Format date signed
+        let dateSignedDisplay = '';
+        if (report.dateSigned) {
+            const d = new Date(report.dateSigned + 'T00:00:00');
+            dateSignedDisplay = d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+        }
+
+        // ── Table rows ──
         const tableRowsXml = days.map(d => {
-            const dateTxt = d.date ? this.formatDateShort(d.date) : '';
-            const timeTxt = this._xmlEsc(d.time || '');
-            const taskTxt = this._xmlEsc(d.task || '');
-            const skillsTxt = this._xmlEsc(d.skills || '');
+            const dateTxt     = d.date ? this.formatDateShort(d.date) : '';
+            const timeTxt     = this._xmlEsc(d.time || '');
+            const taskTxt     = this._xmlEsc(d.task || '');
+            const skillsTxt   = this._xmlEsc(d.skills || '');
             const problemsTxt = this._xmlEsc(d.problems || '');
             return `
 <w:tr>
   <w:trPr><w:trHeight w:val="1152"/></w:trPr>
-  <w:tc>
-    <w:tcPr>
-      <w:tcW w:w="1260" w:type="dxa"/>
-      <w:tcBorders><w:top w:val="single" w:sz="18" w:space="0" w:color="000000"/></w:tcBorders>
-      <w:tcMar><w:top w:w="100" w:type="dxa"/><w:left w:w="100" w:type="dxa"/><w:bottom w:w="100" w:type="dxa"/><w:right w:w="100" w:type="dxa"/></w:tcMar>
-      <w:vAlign w:val="center"/>
-    </w:tcPr>
-    <w:p><w:pPr><w:widowControl w:val="0"/><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr>
-      <w:r><w:t>${dateTxt}</w:t></w:r>
-    </w:p>
+  <w:tc><w:tcPr><w:tcW w:w="1260" w:type="dxa"/><w:tcBorders><w:top w:val="single" w:sz="18" w:space="0" w:color="000000"/></w:tcBorders><w:tcMar><w:top w:w="100" w:type="dxa"/><w:left w:w="100" w:type="dxa"/><w:bottom w:w="100" w:type="dxa"/><w:right w:w="100" w:type="dxa"/></w:tcMar><w:vAlign w:val="center"/></w:tcPr>
+    <w:p><w:pPr><w:widowControl w:val="0"/><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:t>${dateTxt}</w:t></w:r></w:p>
   </w:tc>
-  <w:tc>
-    <w:tcPr>
-      <w:tcW w:w="1545" w:type="dxa"/>
-      <w:tcBorders><w:top w:val="single" w:sz="18" w:space="0" w:color="000000"/></w:tcBorders>
-      <w:tcMar><w:top w:w="100" w:type="dxa"/><w:left w:w="100" w:type="dxa"/><w:bottom w:w="100" w:type="dxa"/><w:right w:w="100" w:type="dxa"/></w:tcMar>
-      <w:vAlign w:val="center"/>
-    </w:tcPr>
-    <w:p><w:pPr><w:widowControl w:val="0"/><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr>
+  <w:tc><w:tcPr><w:tcW w:w="1545" w:type="dxa"/><w:tcBorders><w:top w:val="single" w:sz="18" w:space="0" w:color="000000"/></w:tcBorders><w:tcMar><w:top w:w="100" w:type="dxa"/><w:left w:w="100" w:type="dxa"/><w:bottom w:w="100" w:type="dxa"/><w:right w:w="100" w:type="dxa"/></w:tcMar><w:vAlign w:val="center"/></w:tcPr>
+    <w:p><w:pPr><w:widowControl w:val="0"/><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:t>${timeTxt}</w:t></w:r></w:p>
+  </w:tc>
+  <w:tc><w:tcPr><w:tcW w:w="3675" w:type="dxa"/><w:tcBorders><w:top w:val="single" w:sz="18" w:space="0" w:color="000000"/></w:tcBorders><w:tcMar><w:top w:w="100" w:type="dxa"/><w:left w:w="100" w:type="dxa"/><w:bottom w:w="100" w:type="dxa"/><w:right w:w="100" w:type="dxa"/></w:tcMar><w:vAlign w:val="center"/></w:tcPr>
+    <w:p><w:pPr><w:widowControl w:val="0"/><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:t xml:space="preserve">${taskTxt}</w:t></w:r></w:p>
+  </w:tc>
+  <w:tc><w:tcPr><w:tcW w:w="2310" w:type="dxa"/><w:tcBorders><w:top w:val="single" w:sz="18" w:space="0" w:color="000000"/></w:tcBorders><w:tcMar><w:top w:w="100" w:type="dxa"/><w:left w:w="100" w:type="dxa"/><w:bottom w:w="100" w:type="dxa"/><w:right w:w="100" w:type="dxa"/></w:tcMar><w:vAlign w:val="center"/></w:tcPr>
+    <w:p><w:pPr><w:widowControl w:val="0"/><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:t>${skillsTxt}</w:t></w:r></w:p>
+  </w:tc>
+  <w:tc><w:tcPr><w:tcW w:w="2010" w:type="dxa"/><w:tcBorders><w:top w:val="single" w:sz="18" w:space="0" w:color="000000"/></w:tcBorders><w:tcMar><w:top w:w="100" w:type="dxa"/><w:left w:w="100" w:type="dxa"/><w:bottom w:w="100" w:type="dxa"/><w:right w:w="100" w:type="dxa"/></w:tcMar><w:vAlign w:val="center"/></w:tcPr>
+    <w:p><w:pPr><w:widowControl w:val="0"/><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:t xml:space="preserve">${problemsTxt}</w:t></w:r></w:p>
+  </w:tc>
+</w:tr>`;
+        }).join('\n');
+
+        const docXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<w:document xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+  xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"
+  xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"
+  xmlns:w14="http://schemas.microsoft.com/office/word/2010/wordml"
+  mc:Ignorable="w14">
+  <w:body>
+    <w:p>
+      <w:pPr><w:jc w:val="center"/><w:rPr><w:b/><w:bCs/><w:sz w:val="24"/><w:szCs w:val="24"/></w:rPr></w:pPr>
+      <w:r><w:rPr><w:b/><w:bCs/><w:sz w:val="24"/><w:szCs w:val="24"/></w:rPr><w:t>Weekly Accomplishment Report</w:t></w:r>
+    </w:p>
+    <w:p>
+      <w:r><w:t xml:space="preserve">Name: </w:t></w:r>
+      <w:r><w:rPr><w:u w:val="single"/></w:rPr><w:t>${this._xmlEsc(name)}</w:t></w:r>
+      <w:r><w:t>_____________________________________</w:t></w:r>
+    </w:p>
+    <w:p>
+      <w:r><w:t xml:space="preserve">Inclusive Dates: </w:t></w:r>
+      <w:r><w:rPr><w:u w:val="single"/></w:rPr><w:t xml:space="preserve">${this._xmlEsc(inclusiveDates)}  </w:t></w:r>
+      <w:r><w:t>___________________________</w:t></w:r>
+    </w:p>
+    <w:p>
+      <w:r><w:t xml:space="preserve">Total Number of Hours: </w:t></w:r>
+      <w:r><w:rPr><w:u w:val="single"/></w:rPr><w:t>${this._xmlEsc(totalHours)}</w:t></w:r>
+      <w:r><w:t>______________________</w:t></w:r>
+    </w:p>
+    <w:tbl>
+      <w:tblPr>
+        <w:tblW w:w="10800" w:type="dxa"/>
+        <w:tblBorders>
+          <w:top w:val="single" w:sz="8" w:space="0" w:color="000000"/>
+          <w:left w:val="single" w:sz="8" w:space="0" w:color="000000"/>
+          <w:bottom w:val="single" w:sz="8" w:space="0" w:color="000000"/>
+          <w:right w:val="single" w:sz="8" w:space="0" w:color="000000"/>
+          <w:insideH w:val="single" w:sz="8" w:space="0" w:color="000000"/>
+          <w:insideV w:val="single" w:sz="8" w:space="0" w:color="000000"/>
+        </w:tblBorders>
+        <w:tblLayout w:type="fixed"/>
+      </w:tblPr>
+      <w:tblGrid>
+        <w:gridCol w:w="1260"/><w:gridCol w:w="1545"/><w:gridCol w:w="3675"/>
+        <w:gridCol w:w="2310"/><w:gridCol w:w="2010"/>
+      </w:tblGrid>
+      <w:tr>
+        <w:tc><w:tcPr><w:tcW w:w="1260" w:type="dxa"/><w:tcBorders><w:bottom w:val="single" w:sz="18" w:space="0" w:color="000000"/></w:tcBorders><w:tcMar><w:top w:w="100" w:type="dxa"/><w:left w:w="100" w:type="dxa"/><w:bottom w:w="100" w:type="dxa"/><w:right w:w="100" w:type="dxa"/></w:tcMar><w:vAlign w:val="center"/></w:tcPr>
+          <w:p><w:pPr><w:widowControl w:val="0"/><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/><w:rPr><w:b/><w:bCs/></w:rPr></w:pPr><w:r><w:rPr><w:b/><w:bCs/></w:rPr><w:t>Date</w:t></w:r></w:p>
+        </w:tc>
+        <w:tc><w:tcPr><w:tcW w:w="1545" w:type="dxa"/><w:tcBorders><w:bottom w:val="single" w:sz="18" w:space="0" w:color="000000"/></w:tcBorders><w:tcMar><w:top w:w="100" w:type="dxa"/><w:left w:w="100" w:type="dxa"/><w:bottom w:w="100" w:type="dxa"/><w:right w:w="100" w:type="dxa"/></w:tcMar><w:vAlign w:val="center"/></w:tcPr>
+          <w:p><w:pPr><w:widowControl w:val="0"/><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/><w:rPr><w:b/><w:bCs/></w:rPr></w:pPr><w:r><w:rPr><w:b/><w:bCs/></w:rPr><w:t>Time-in/ Time-out</w:t></w:r></w:p>
+        </w:tc>
+        <w:tc><w:tcPr><w:tcW w:w="3675" w:type="dxa"/><w:tcBorders><w:bottom w:val="single" w:sz="18" w:space="0" w:color="000000"/></w:tcBorders><w:tcMar><w:top w:w="100" w:type="dxa"/><w:left w:w="100" w:type="dxa"/><w:bottom w:w="100" w:type="dxa"/><w:right w:w="100" w:type="dxa"/></w:tcMar><w:vAlign w:val="center"/></w:tcPr>
+          <w:p><w:pPr><w:widowControl w:val="0"/><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/><w:rPr><w:b/><w:bCs/></w:rPr></w:pPr><w:r><w:rPr><w:b/><w:bCs/></w:rPr><w:t>Task Performed/ Key Accomplishments</w:t></w:r></w:p>
+        </w:tc>
+        <w:tc><w:tcPr><w:tcW w:w="2310" w:type="dxa"/><w:tcBorders><w:bottom w:val="single" w:sz="18" w:space="0" w:color="000000"/></w:tcBorders><w:tcMar><w:top w:w="100" w:type="dxa"/><w:left w:w="100" w:type="dxa"/><w:bottom w:w="100" w:type="dxa"/><w:right w:w="100" w:type="dxa"/></w:tcMar><w:vAlign w:val="center"/></w:tcPr>
+          <w:p><w:pPr><w:widowControl w:val="0"/><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/><w:rPr><w:b/><w:bCs/></w:rPr></w:pPr><w:r><w:rPr><w:b/><w:bCs/></w:rPr><w:t>Skills Developed</w:t></w:r></w:p>
+        </w:tc>
+        <w:tc><w:tcPr><w:tcW w:w="2010" w:type="dxa"/><w:tcBorders><w:bottom w:val="single" w:sz="18" w:space="0" w:color="000000"/></w:tcBorders><w:tcMar><w:top w:w="100" w:type="dxa"/><w:left w:w="100" w:type="dxa"/><w:bottom w:w="100" w:type="dxa"/><w:right w:w="100" w:type="dxa"/></w:tcMar><w:vAlign w:val="center"/></w:tcPr>
+          <w:p><w:pPr><w:widowControl w:val="0"/><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/><w:rPr><w:b/><w:bCs/></w:rPr></w:pPr><w:r><w:rPr><w:b/><w:bCs/></w:rPr><w:t>Problems/ Challenges Encountered</w:t></w:r></w:p>
+        </w:tc>
+      </w:tr>
+      ${tableRowsXml}
+    </w:tbl>
+    <w:p><w:pPr><w:spacing w:after="240"/></w:pPr></w:p>
+    <w:p>
+      <w:r><w:rPr><w:i/></w:rPr><w:t>Verified by:</w:t></w:r>
+    </w:p>
+    <w:p><w:pPr><w:spacing w:after="720"/></w:pPr></w:p>
+    <w:p>
+      <w:r>
+        <w:rPr><w:u w:val="single"/></w:rPr>
+        <w:t xml:space="preserve">${this._xmlEsc(supervisorName)}                    </w:t>
+      </w:r>
+      <w:r><w:t xml:space="preserve">         </w:t></w:r>
+      <w:r>
+        <w:rPr><w:u w:val="single"/></w:rPr>
+        <w:t xml:space="preserve">${this._xmlEsc(dateSignedDisplay)}          </w:t>
+      </w:r>
+    </w:p>
+    <w:p>
+      <w:r><w:t xml:space="preserve">(Name of ojt supervisor)       </w:t></w:r>
+      <w:r><w:t xml:space="preserve">         Date</w:t></w:r>
+    </w:p>
+    ${supervisorRole ? `<w:p><w:r><w:t>${this._xmlEsc(supervisorRole)}</w:t></w:r></w:p>` : ''}
+    <w:sectPr>
+      <w:pgSz w:w="12240" w:h="15840"/>
+      <w:pgMar w:top="1440" w:right="1440" w:bottom="1440" w:left="1440" w:header="720" w:footer="720" w:gutter="0"/>
+    </w:sectPr>
+  </w:body>
+</w:document>`;
+
+        const stylesXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+  <w:docDefaults><w:rPrDefault><w:rPr><w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/><w:sz w:val="22"/><w:szCs w:val="22"/></w:rPr></w:rPrDefault></w:docDefaults>
+  <w:style w:type="paragraph" w:styleId="Normal"><w:name w:val="Normal"/><w:pPr><w:spacing w:after="160" w:line="259" w:lineRule="auto"/></w:pPr></w:style>
+  <w:style w:type="table" w:styleId="a"><w:name w:val="Normal Table"/><w:tblPr><w:tblCellMar><w:top w:w="0" w:type="dxa"/><w:left w:w="108" w:type="dxa"/><w:bottom w:w="0" w:type="dxa"/><w:right w:w="108" w:type="dxa"/></w:tblCellMar></w:tblPr></w:style>
+</w:styles>`;
+
+        const contentTypes = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
+  <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
+  <Default Extension="xml" ContentType="application/xml"/>
+  <Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>
+  <Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/>
+</Types>`;
+
+        const relsRoot = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>
+</Relationships>`;
+
+        const relsDoc = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>
+</Relationships>`;
+
+        const zip = new window.JSZip();
+        zip.file('[Content_Types].xml', contentTypes);
+        zip.folder('_rels').file('.rels', relsRoot);
+        const wf = zip.folder('word');
+        wf.file('document.xml', docXml);
+        wf.file('styles.xml', stylesXml);
+        wf.folder('_rels').file('document.xml.rels', relsDoc);
+
+        const blob = await zip.generateAsync({ type: 'blob', mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        const safeName = (name || 'report').replace(/\s+/g, '_').toUpperCase();
+        a.href = url;
+        a.download = `Weekly_Accomplishment_Report_${safeName}.docx`;
+        a.click();
+        URL.revokeObjectURL(url);
+        this.notify('Weekly report downloaded!', 'success');
+    }
+
+    _xmlEsc(str) {
+        return (str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&apos;');
+    }
+
+    _loadScript(src) {
+        return new Promise((res, rej) => {
+            const s = document.createElement('script');
+            s.src = src; s.onload = res; s.onerror = rej;
+            document.head.appendChild(s);
+        });
+    }
+
       <w:r><w:t>${timeTxt}</w:t></w:r>
     </w:p>
   </w:tc>
@@ -924,185 +1100,3 @@ class OJTCalculator {
         // ── styles.xml (minimal) ──
         const stylesXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"
-          xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
-  <w:docDefaults>
-    <w:rPrDefault>
-      <w:rPr>
-        <w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/>
-        <w:sz w:val="22"/>
-        <w:szCs w:val="22"/>
-      </w:rPr>
-    </w:rPrDefault>
-  </w:docDefaults>
-  <w:style w:type="paragraph" w:styleId="Normal">
-    <w:name w:val="Normal"/>
-    <w:pPr><w:spacing w:after="160" w:line="259" w:lineRule="auto"/></w:pPr>
-  </w:style>
-  <w:style w:type="table" w:styleId="a">
-    <w:name w:val="Normal Table"/>
-    <w:tblPr>
-      <w:tblCellMar>
-        <w:top w:w="0" w:type="dxa"/>
-        <w:left w:w="108" w:type="dxa"/>
-        <w:bottom w:w="0" w:type="dxa"/>
-        <w:right w:w="108" w:type="dxa"/>
-      </w:tblCellMar>
-    </w:tblPr>
-  </w:style>
-</w:styles>`;
-
-        // ── [Content_Types].xml ──
-        const contentTypes = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
-  <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
-  <Default Extension="xml" ContentType="application/xml"/>
-  <Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>
-  <Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/>
-</Types>`;
-
-        // ── _rels/.rels ──
-        const relsRoot = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
-  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>
-</Relationships>`;
-
-        // ── word/_rels/document.xml.rels ──
-        const relsDoc = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
-  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>
-</Relationships>`;
-
-        // ── Package with JSZip ──
-        const zip = new window.JSZip();
-        zip.file('[Content_Types].xml', contentTypes);
-        zip.folder('_rels').file('.rels', relsRoot);
-        const wordFolder = zip.folder('word');
-        wordFolder.file('document.xml', docXml);
-        wordFolder.file('styles.xml', stylesXml);
-        wordFolder.folder('_rels').file('document.xml.rels', relsDoc);
-
-        const blob = await zip.generateAsync({ type: 'blob', mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        const safeName = (name || 'report').replace(/\s+/g, '_').toUpperCase();
-        a.href = url;
-        a.download = `Weekly_Accomplishment_Report_${safeName}.docx`;
-        a.click();
-        URL.revokeObjectURL(url);
-        this.notify('Weekly report downloaded!', 'success');
-    }
-
-    _xmlEsc(str) {
-        return (str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&apos;');
-    }
-
-    _loadScript(src) {
-        return new Promise((res, rej) => {
-            const s = document.createElement('script');
-            s.src = src; s.onload = res; s.onerror = rej;
-            document.head.appendChild(s);
-        });
-    }
-
-    // ====================================================================
-    //  EXPORT DAILY TIME REPORT → XLSX  (using ExcelJS)
-    // ====================================================================
-    async exportToExcel() {
-        if (!this.entries.length) { this.notify('No entries to export!', 'error'); return; }
-        if (!window.ExcelJS) {
-            await this._loadScript('https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js');
-        }
-        const workbook = new window.ExcelJS.Workbook();
-        const ws = workbook.addWorksheet('Daily Time Report');
-
-        ws.columns = [
-            { width: 5 }, { width: 22.14 }, { width: 18 },
-            { width: 16 }, { width: 21.14 }, { width: 18 }, { width: 5 }
-        ];
-
-        const rh = {1:7.5,2:45,3:9.75,4:18,5:30.6,6:18,7:18,8:9.75,9:27.75,35:15.75,36:21.75,37:13.5,38:13.5,39:13.5,40:13.5,41:36,42:13.5,43:13.5,44:18,45:13.5,46:7.5};
-        for (let i=10;i<=34;i++) rh[i]=18;
-        Object.entries(rh).forEach(([r,h]) => { ws.getRow(Number(r)).height = h; });
-
-        const fs = (argb) => ({ type:'pattern', pattern:'solid', fgColor:{argb} });
-        const fn = (o={}) => ({ name:'Arial', size:o.size||10, bold:o.bold||false, italic:o.italic||false, color:o.color?{argb:o.color}:undefined });
-        const al = (h,v,wrap) => ({ horizontal:h, vertical:v||'middle', wrapText:!!wrap });
-        const thin = {style:'thin'}, med = {style:'medium'};
-        const sb = (cell, t, b, l, r) => { const bd={}; if(t)bd.top=t; if(b)bd.bottom=b; if(l)bd.left=l; if(r)bd.right=r; cell.border=bd; };
-        const NAVY='FF1F3864', BLUE='FF2E5090', LBLUE='FFDEEAF1', WHITE='FFFFFFFF', F2='FFF2F2F2', BDD='FFBDD7EE', GREY='FF666666', DG='FF444444';
-
-        ws.mergeCells('B2:F2');
-        const t2=ws.getCell('B2');
-        t2.value={richText:[{text:'DAILY TIME REPORT',font:{name:'Arial',size:16,bold:true,color:{argb:'FFFFFFFF'}}},{text:'\nOn-the-Job Training',font:{name:'Arial',size:14,bold:true,color:{argb:'FFFFFFFF'}}}]};
-        t2.fill=fs(NAVY); t2.alignment=al('center','middle',true); sb(t2,med,null,med,med);
-
-        const p=this.profileData;
-        ws.getCell('B4').value='Name:'; ws.getCell('B4').font=fn({bold:true,color:NAVY}); ws.getCell('B4').fill=fs(LBLUE); ws.getCell('B4').alignment=al('right'); sb(ws.getCell('B4'),med,thin,med,thin);
-        ws.mergeCells('C4:D4'); ws.getCell('C4').value=p.name||''; ws.getCell('C4').font=fn(); ws.getCell('C4').fill=fs(WHITE); ws.getCell('C4').alignment=al('left'); sb(ws.getCell('C4'),null,thin,null,null);
-        ws.getCell('E4').value='Required OJT Hours:'; ws.getCell('E4').font=fn({bold:true,color:NAVY}); ws.getCell('E4').fill=fs(LBLUE); ws.getCell('E4').alignment=al('right'); sb(ws.getCell('E4'),thin,thin,thin,thin);
-        ws.getCell('F4').value=this.hoursNeeded; ws.getCell('F4').font=fn(); ws.getCell('F4').alignment=al('center'); sb(ws.getCell('F4'),null,thin,null,med);
-
-        ws.getCell('B5').value='School / University:'; ws.getCell('B5').font=fn({bold:true,color:NAVY}); ws.getCell('B5').fill=fs(LBLUE); ws.getCell('B5').alignment=al('right'); sb(ws.getCell('B5'),thin,thin,med,thin);
-        ws.mergeCells('C5:D5'); ws.getCell('C5').value=p.school||''; ws.getCell('C5').font=fn(); ws.getCell('C5').fill=fs(WHITE); ws.getCell('C5').alignment=al('left','middle',true); sb(ws.getCell('C5'),null,thin,null,null);
-        ws.getCell('E5').value='Total Hours Rendered:'; ws.getCell('E5').font=fn({bold:true,color:NAVY}); ws.getCell('E5').fill=fs(LBLUE); ws.getCell('E5').alignment=al('right'); sb(ws.getCell('E5'),thin,thin,thin,thin);
-        ws.getCell('F5').value={formula:'F36'}; ws.getCell('F5').font=fn({bold:true,color:NAVY}); ws.getCell('F5').alignment=al('center'); ws.getCell('F5').numFmt='[h]:mm'; sb(ws.getCell('F5'),null,thin,null,med);
-
-        ws.getCell('B6').value='Company / Department:'; ws.getCell('B6').font=fn({bold:true,color:NAVY}); ws.getCell('B6').fill=fs(LBLUE); ws.getCell('B6').alignment=al('right'); sb(ws.getCell('B6'),thin,thin,med,thin);
-        ws.mergeCells('C6:D6'); ws.getCell('C6').value=p.company||''; ws.getCell('C6').font=fn(); ws.getCell('C6').fill=fs(WHITE); ws.getCell('C6').alignment=al('left'); sb(ws.getCell('C6'),null,thin,null,null);
-        ws.getCell('E6').fill=fs(LBLUE); sb(ws.getCell('E6'),thin,thin,thin,thin);
-
-        ws.getCell('B7').value='Period Covered:'; ws.getCell('B7').font=fn({bold:true,color:NAVY}); ws.getCell('B7').fill=fs(LBLUE); ws.getCell('B7').alignment=al('right'); sb(ws.getCell('B7'),thin,thin,med,thin);
-        ws.mergeCells('C7:D7'); ws.getCell('C7').value=p.period||''; ws.getCell('C7').font=fn(); ws.getCell('C7').fill=fs(WHITE); ws.getCell('C7').alignment=al('left'); sb(ws.getCell('C7'),null,thin,null,null);
-        ws.getCell('E7').fill=fs(LBLUE); sb(ws.getCell('E7'),thin,thin,thin,thin);
-
-        ['A9','B9','C9','D9','E9','F9','G9'].forEach(addr => { const c=ws.getCell(addr); c.font=fn({bold:true,color:'FFFFFFFF'}); c.fill=fs(BLUE); c.alignment=al('center'); sb(c,thin,thin,thin,thin); });
-        ws.getCell('B9').value='No.'; ws.getCell('C9').value='Date'; ws.getCell('D9').value='Time In'; ws.getCell('E9').value='Time Out'; ws.getCell('F9').value='Hours Rendered';
-        sb(ws.getCell('B9'),thin,thin,med,thin); sb(ws.getCell('F9'),thin,thin,thin,med);
-
-        const em={};
-        this.entries.forEach((e,i)=>{em[i+1]=e;});
-        for(let rn=1;rn<=25;rn++){
-            const r=9+rn, ev=rn%2===0, rf=ev?F2:WHITE;
-            ws.getCell(`A${r}`).fill=fs(BLUE); sb(ws.getCell(`A${r}`),thin,thin,thin,thin);
-            ws.getCell(`G${r}`).fill=fs(BLUE); sb(ws.getCell(`G${r}`),thin,thin,thin,thin);
-            const bc=ws.getCell(`B${r}`); bc.value=rn; bc.font=fn({size:9,color:GREY}); bc.fill=fs(rf); bc.alignment=al('center'); sb(bc,thin,thin,med,thin);
-            const e=em[rn];
-            if(e){
-                const cc=ws.getCell(`C${r}`); cc.value=new Date(e.date+'T12:00:00'); cc.font=fn(); cc.fill=fs(WHITE); cc.alignment=al('center'); cc.numFmt='mmm-dd-yyyy'; sb(cc,thin,thin,thin,thin);
-                const dc=ws.getCell(`D${r}`); const[ih,im]=e.timeIn.split(':').map(Number); dc.value=(ih*60+im)/1440; dc.font=fn(); dc.fill=fs(WHITE); dc.alignment=al('center'); dc.numFmt='h:MM AM/PM'; sb(dc,thin,thin,thin,thin);
-                const ec=ws.getCell(`E${r}`); const[oh,om]=e.timeOut.split(':').map(Number); ec.value=(oh*60+om)/1440; ec.font=fn(); ec.fill=fs(WHITE); ec.alignment=al('center'); ec.numFmt='h:MM AM/PM'; sb(ec,thin,thin,thin,thin);
-            } else {
-                ['C','D','E'].forEach(col=>{const c=ws.getCell(`${col}${r}`);c.fill=fs(rf);sb(c,thin,thin,thin,thin);});
-            }
-            const fc=ws.getCell(`F${r}`); fc.value={formula:`IF(AND(D${r}<>"",E${r}<>""),MIN(E${r}-D${r}-TIME(1,0,0),TIME(8,0,0)),"")`}; fc.font=fn(); fc.fill=fs(rf); fc.alignment=al('center'); fc.numFmt='[h]:mm'; sb(fc,thin,thin,thin,med);
-        }
-
-        ws.mergeCells('B35:F35'); const n35=ws.getCell('B35'); n35.value='* Hours rendered are computed net of 1-hour lunch break, capped at 8 hours/day.'; n35.font=fn({size:8,italic:true,color:GREY}); n35.alignment=al('left'); sb(n35,null,null,med,med);
-        ws.mergeCells('B36:E36'); const b36=ws.getCell('B36'); b36.value='TOTAL HOURS RENDERED'; b36.font=fn({size:11,bold:true,color:'FFFFFFFF'}); b36.fill=fs(NAVY); b36.alignment=al('right'); sb(b36,null,null,med,null);
-        const f36=ws.getCell('F36'); f36.value={formula:'SUM(F10:F34)'}; f36.font=fn({size:11,bold:true,color:'FFFFFFFF'}); f36.fill=fs(NAVY); f36.alignment=al('center'); f36.numFmt='[h]:mm'; sb(f36,thin,thin,thin,med);
-        ws.mergeCells('B39:F39'); const b39=ws.getCell('B39'); b39.value='Certified Correct:'; b39.font=fn({bold:true,color:NAVY}); b39.alignment=al('left'); sb(b39,null,null,med,med);
-        ws.mergeCells('C41:E41'); ws.getCell('C41').fill=fs(LBLUE); sb(ws.getCell('C41'),null,med,null,null);
-        ws.mergeCells('C42:E42'); const c42=ws.getCell('C42'); c42.value=p.supervisor||''; c42.font=fn({size:9,color:DG}); c42.alignment=al('center');
-        ws.mergeCells('C43:E43'); const c43=ws.getCell('C43'); c43.value=p.supervisorRole||''; c43.font=fn({size:9,color:DG}); c43.alignment=al('center');
-        ws.mergeCells('C44:E44'); const c44=ws.getCell('C44'); c44.value='OJT Supervisor / Immediate Head'; c44.font=fn({bold:true,color:NAVY}); c44.fill=fs(BDD); c44.alignment=al('center');
-        ws.mergeCells('C45:D45'); const c45=ws.getCell('C45'); c45.value='Date: ___________________________'; c45.font=fn({size:9,color:NAVY}); c45.alignment=al('left');
-
-        const buf=await workbook.xlsx.writeBuffer();
-        const blob=new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
-        const url=URL.createObjectURL(blob);
-        const a=document.createElement('a');
-        a.href=url; a.download=`daily_time_report_${(p.name||'export').replace(/\s+/g,'_').toUpperCase()}_${new Date().toISOString().split('T')[0]}.xlsx`;
-        a.click(); URL.revokeObjectURL(url);
-        this.notify('Exported to Excel!', 'success');
-    }
-
-    // ---- Notification ----
-    notify(msg, type='info') {
-        document.querySelector('.notification')?.remove();
-        const n=document.createElement('div');
-        n.className=`notification notification-${type}`; n.textContent=msg;
-        document.body.appendChild(n);
-        setTimeout(()=>n.classList.add('show'),10);
-        setTimeout(()=>{n.classList.remove('show');setTimeout(()=>n.remove(),300);},3000);
-    }
-}

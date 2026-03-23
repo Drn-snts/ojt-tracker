@@ -4,17 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>OJT Tracker — Master Your Hours</title>
+    <link rel="icon" type="image/png" href="images/ojtlogo.png">
     <link rel="stylesheet" href="styles.css">
-    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 </head>
 <body>
 
-<!-- ================================================
-     LANDING PAGE
-     ================================================ -->
+<!-- ================================================  LANDING  ================================================ -->
 <div id="landingScreen" class="landing">
-    <!-- subtle grid overlay -->
     <div class="landing-grid"></div>
 
     <nav class="landing-nav">
@@ -23,54 +21,40 @@
             <span>OJT Tracker</span>
         </div>
         <div class="landing-nav-links">
-            <button class="landing-nav-btn" onclick="showAuth('login')">Sign In</button>
-            <button class="landing-nav-btn landing-nav-btn-outline" onclick="showAuth('signup')">Sign Up</button>
+            <button class="landing-nav-btn" onclick="landingTab('login')">Sign In</button>
+            <button class="landing-nav-btn landing-nav-btn-outline" onclick="landingTab('signup')">Sign Up</button>
         </div>
     </nav>
 
     <div class="landing-body">
         <!-- LEFT -->
         <div class="landing-left">
-            <div class="landing-badge">
-                <i class="bi bi-clock-fill"></i> Track your hours easily!
-            </div>
-
+            <div class="landing-badge"><i class="bi bi-clock-fill"></i> Track your hours easily!</div>
             <h1 class="landing-headline">
-                Master your <span class="accent-green">OJT</span><br>
-                <span class="accent-green">Hours</span> with ease.
+                Master your <span class="accent-red">OJT</span><br>
+                <span class="accent-red">Hours</span> with ease.
             </h1>
-
             <p class="landing-sub">
                 The modern way for interns to track, verify, and avoid human errors.<br>
                 No more spreadsheets, no more lost logs.
             </p>
-
             <div class="landing-features">
-                <div class="landing-feat">
-                    <i class="bi bi-activity accent-green"></i>
-                    <span><strong>Real-time Tracking</strong></span>
-                </div>
-                <div class="landing-feat">
-                    <i class="bi bi-bar-chart-line accent-green"></i>
-                    <span><strong>Visual Analytics</strong></span>
-                </div>
-                <div class="landing-feat">
-                    <i class="bi bi-check-circle accent-green"></i>
-                    <span><strong>Easy Supervisor Approval</strong></span>
-                </div>
-                <div class="landing-feat">
-                    <i class="bi bi-shield-check accent-green"></i>
-                    <span><strong>Secure Data Exports &amp; Multi Device Logging</strong></span>
-                </div>
+                <div class="landing-feat"><i class="bi bi-activity"></i><span><strong>Real-time Tracking</strong></span></div>
+                <div class="landing-feat"><i class="bi bi-bar-chart-line"></i><span><strong>Visual Analytics</strong></span></div>
+                <div class="landing-feat"><i class="bi bi-check-circle"></i><span><strong>Easy Supervisor Approval</strong></span></div>
+                <div class="landing-feat"><i class="bi bi-shield-check"></i><span><strong>Secure Data Exports &amp; Multi Device Logging</strong></span></div>
             </div>
         </div>
 
         <!-- RIGHT: Auth Card -->
         <div class="landing-auth-card">
-            <h2 class="landing-auth-title">Get Started</h2>
-            <p class="landing-auth-sub">Join 500+ interns tracking their progress.</p>
+            <div class="landing-auth-logo">
+                <i class="bi bi-bar-chart-fill landing-auth-logo-icon"></i>
+                <span class="landing-auth-logo-title">OJT Tracker</span>
+                <span class="landing-auth-logo-sub">Track your training hours like a pro</span>
+            </div>
 
-            <!-- LOGIN FORM -->
+            <!-- LOGIN -->
             <div id="landingLoginForm" class="landing-form active">
                 <div class="landing-form-tabs">
                     <button class="landing-tab active" onclick="landingTab('login')">Sign In</button>
@@ -78,20 +62,18 @@
                 </div>
                 <div class="landing-field">
                     <label>Email</label>
-                    <input type="email" id="lLoginEmail" placeholder="you@email.com" class="landing-input">
+                    <input type="email" id="lLoginEmail" placeholder="sample@gmail.com" class="landing-input">
                 </div>
                 <div class="landing-field">
                     <label>Password</label>
-                    <input type="password" id="lLoginPassword" placeholder="Your password" class="landing-input">
+                    <input type="password" id="lLoginPassword" placeholder="••••••••" class="landing-input">
                 </div>
                 <div class="landing-error" id="lLoginError"></div>
-                <button class="landing-cta" id="lLoginBtn" onclick="handleLandingLogin()">
-                    Sign In
-                </button>
+                <button class="landing-cta" id="lLoginBtn" onclick="handleLandingLogin()">Sign In</button>
                 <p class="landing-forgot" onclick="handleLandingForgot()">Forgot password?</p>
             </div>
 
-            <!-- SIGNUP FORM -->
+            <!-- SIGNUP -->
             <div id="landingSignupForm" class="landing-form">
                 <div class="landing-form-tabs">
                     <button class="landing-tab" onclick="landingTab('login')">Sign In</button>
@@ -116,9 +98,7 @@
                     </div>
                 </div>
                 <div class="landing-error" id="lSignupError"></div>
-                <button class="landing-cta" id="lSignupBtn" onclick="handleLandingSignup()">
-                    Create Account
-                </button>
+                <button class="landing-cta" id="lSignupBtn" onclick="handleLandingSignup()">Create Account</button>
             </div>
 
             <p class="landing-terms">By continuing, you agree to our <a href="#">Terms of Service</a>.</p>
@@ -126,9 +106,7 @@
     </div>
 </div>
 
-<!-- ================================================
-     MAIN APP
-     ================================================ -->
+<!-- ================================================  APP  ================================================ -->
 <div id="appScreen" class="hidden">
     <div class="app-layout">
 
@@ -141,22 +119,12 @@
                     <span class="brand-ver">v4.0</span>
                 </div>
             </div>
-
             <nav class="sidebar-nav">
-                <a class="nav-item active" onclick="showSection('dashboard')">
-                    <i class="bi bi-grid-1x2-fill"></i><span>Dashboard</span>
-                </a>
-                <a class="nav-item" onclick="showSection('entries')">
-                    <i class="bi bi-table"></i><span>Time Entries</span>
-                </a>
-                <a class="nav-item" onclick="showSection('weekly')">
-                    <i class="bi bi-journal-text"></i><span>Weekly Report</span>
-                </a>
-                <a class="nav-item" onclick="showSection('profile')">
-                    <i class="bi bi-person-badge-fill"></i><span>Report Info</span>
-                </a>
+                <a class="nav-item active" onclick="showSection('dashboard')"><i class="bi bi-grid-1x2-fill"></i><span>Dashboard</span></a>
+                <a class="nav-item" onclick="showSection('entries')"><i class="bi bi-table"></i><span>Time Entries</span></a>
+                <a class="nav-item" onclick="showSection('weekly')"><i class="bi bi-journal-text"></i><span>Weekly Report</span></a>
+                <a class="nav-item" onclick="showSection('profile')"><i class="bi bi-person-badge-fill"></i><span>Report Info</span></a>
             </nav>
-
             <div class="sidebar-bottom">
                 <div class="sidebar-user">
                     <div class="user-avatar" id="userAvatar"></div>
@@ -171,7 +139,6 @@
 
         <!-- MAIN -->
         <main class="main-content">
-            <!-- TOPBAR -->
             <div class="topbar">
                 <div class="topbar-title" id="topbarTitle">Dashboard</div>
                 <div class="topbar-controls">
@@ -188,13 +155,13 @@
                 </div>
             </div>
 
-            <!-- ── DASHBOARD ── -->
+            <!-- DASHBOARD -->
             <section id="section-dashboard" class="content-section active">
                 <div class="stats-grid">
                     <div class="stat-card stat-blue">
                         <div class="stat-top"><span class="stat-label">Hours Rendered</span><i class="bi bi-check-circle-fill stat-icon"></i></div>
                         <p class="stat-value" id="hoursRendered">0.00</p>
-                        <p class="stat-sub">of <span id="targetHoursLabel">500</span> target hours</p>
+                        <p class="stat-sub">of <span id="targetHoursLabel">500</span> target hrs</p>
                     </div>
                     <div class="stat-card stat-amber">
                         <div class="stat-top"><span class="stat-label">Remaining</span><i class="bi bi-hourglass-split stat-icon"></i></div>
@@ -202,14 +169,9 @@
                         <p class="stat-sub">hours left to complete</p>
                     </div>
                     <div class="stat-card stat-green">
-                        <div class="stat-top"><span class="stat-label">Est. Days Left</span><i class="bi bi-calendar-check stat-icon"></i></div>
+                        <div class="stat-top"><span class="stat-label">Days (8hrs/day)</span><i class="bi bi-calendar-check stat-icon"></i></div>
                         <p class="stat-value" id="remainingDays">62.5</p>
-                        <p class="stat-sub">workdays at 8 hrs/day</p>
-                    </div>
-                    <div class="stat-card stat-purple">
-                        <div class="stat-top"><span class="stat-label">Days Logged</span><i class="bi bi-journal-check stat-icon"></i></div>
-                        <p class="stat-value" id="entriesCount">0</p>
-                        <p class="stat-sub">days of training logged</p>
+                        <p class="stat-sub">workdays remaining</p>
                     </div>
                 </div>
 
@@ -221,48 +183,26 @@
                         </div>
                         <span class="progress-pct" id="progressText">0%</span>
                     </div>
-                    <div class="progress-track">
-                        <div class="progress-fill" id="progressFill"></div>
-                    </div>
-                    <div class="progress-labels">
-                        <span>0 hrs</span>
-                        <span id="progressMidLabel">250 hrs</span>
-                        <span id="progressEndLabel">500 hrs</span>
-                    </div>
+                    <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+                    <div class="progress-labels"><span>0 hrs</span><span id="progressMidLabel">250 hrs</span><span id="progressEndLabel">500 hrs</span></div>
                 </div>
 
-                <!-- Quick Add Entry -->
                 <div class="card">
                     <div class="card-header-row">
                         <h2 class="card-title"><i class="bi bi-plus-circle"></i> Quick Add Entry</h2>
-                        <button type="button" id="duplicateBtn" class="btn btn-sm btn-outline">
-                            <i class="bi bi-copy"></i> Duplicate Last
-                        </button>
+                        <button type="button" id="duplicateBtn" class="btn btn-sm btn-outline"><i class="bi bi-copy"></i> Duplicate Last</button>
                     </div>
                     <div class="form-grid">
-                        <div class="form-group">
-                            <label class="form-label"><i class="bi bi-calendar3"></i> Date</label>
-                            <input type="date" id="date" required class="form-input">
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label"><i class="bi bi-clock"></i> Time In</label>
-                            <input type="time" id="timeIn" required class="form-input">
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label"><i class="bi bi-clock-history"></i> Time Out</label>
-                            <input type="time" id="timeOut" required class="form-input">
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label"><i class="bi bi-cup-hot"></i> Break (mins)</label>
-                            <input type="number" id="breakTime" min="0" max="480" placeholder="0" class="form-input">
-                        </div>
+                        <div class="form-group"><label class="form-label"><i class="bi bi-calendar3"></i> Date</label><input type="date" id="date" required class="form-input"></div>
+                        <div class="form-group"><label class="form-label"><i class="bi bi-clock"></i> Time In</label><input type="time" id="timeIn" required class="form-input"></div>
+                        <div class="form-group"><label class="form-label"><i class="bi bi-clock-history"></i> Time Out</label><input type="time" id="timeOut" required class="form-input"></div>
+                        <div class="form-group"><label class="form-label"><i class="bi bi-cup-hot"></i> Break (mins)</label><input type="number" id="breakTime" min="0" max="480" placeholder="0" class="form-input"></div>
                     </div>
                     <div class="form-actions" style="margin-top:14px">
                         <button type="button" id="addBtn" class="btn btn-primary"><i class="bi bi-plus-lg"></i> Add Entry</button>
                     </div>
                 </div>
 
-                <!-- Recent entries -->
                 <div class="card">
                     <div class="card-header-row">
                         <h2 class="card-title">Recent Entries</h2>
@@ -277,7 +217,7 @@
                 </div>
             </section>
 
-            <!-- ── TIME ENTRIES ── -->
+            <!-- TIME ENTRIES -->
             <section id="section-entries" class="content-section">
                 <div class="card">
                     <div class="card-header-row">
@@ -286,12 +226,8 @@
                     </div>
                     <div class="table-wrapper">
                         <table class="entries-table" id="hoursTable">
-                            <thead>
-                                <tr><th>#</th><th>Date</th><th>Time In</th><th>Time Out</th><th>Break</th><th>Gross Hrs</th><th>Net Hrs</th><th>Action</th></tr>
-                            </thead>
-                            <tbody id="tableBody">
-                                <tr class="empty-row"><td colspan="8"><i class="bi bi-inbox"></i> No entries yet. Add your first entry!</td></tr>
-                            </tbody>
+                            <thead><tr><th>#</th><th>Date</th><th>Time In</th><th>Time Out</th><th>Break</th><th>Gross Hrs</th><th>Net Hrs</th><th>Action</th></tr></thead>
+                            <tbody id="tableBody"><tr class="empty-row"><td colspan="8"><i class="bi bi-inbox"></i> No entries yet.</td></tr></tbody>
                         </table>
                     </div>
                 </div>
@@ -301,62 +237,76 @@
                 </div>
             </section>
 
-            <!-- ── WEEKLY REPORT ── -->
+            <!-- WEEKLY REPORT -->
             <section id="section-weekly" class="content-section">
-
-                <!-- Add Weekly Report -->
                 <div class="card">
                     <div class="card-header-row">
                         <div>
-                            <h2 class="card-title"><i class="bi bi-journal-plus"></i> Add Weekly Report Entry</h2>
-                            <p class="card-sub">Fill in each day's accomplishments for the week</p>
+                            <h2 class="card-title"><i class="bi bi-journal-plus"></i> Add Weekly Report</h2>
+                            <p class="card-sub">Fill in each day's accomplishments, then save & download as .docx</p>
                         </div>
                     </div>
 
-                    <!-- Week meta -->
+                    <!-- Report meta info -->
                     <div class="weekly-meta-grid">
                         <div class="form-group">
-                            <label class="form-label">Inclusive Dates</label>
+                            <label class="form-label"><i class="bi bi-person"></i> Student Name</label>
+                            <input type="text" id="wkStudentName" placeholder="e.g. Ahldrn B. Santos" class="form-input">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label"><i class="bi bi-calendar-range"></i> Inclusive Dates</label>
                             <input type="text" id="wkInclusiveDates" placeholder="e.g. February 23-27, 2026" class="form-input">
                         </div>
                         <div class="form-group">
-                            <label class="form-label">Total Number of Hours</label>
+                            <label class="form-label"><i class="bi bi-clock"></i> Total Hours</label>
                             <input type="text" id="wkTotalHours" placeholder="e.g. 40 hours" class="form-input">
                         </div>
                     </div>
 
-                    <!-- Day rows -->
-                    <div class="weekly-days-container" id="weeklyDaysContainer">
-                        <!-- Rows injected by JS -->
+                    <!-- Verified by block -->
+                    <div class="weekly-sig-grid">
+                        <div class="weekly-sig-title"><i class="bi bi-patch-check"></i> Verified By</div>
+                        <div class="form-group">
+                            <label class="form-label"><i class="bi bi-person-badge"></i> OJT Supervisor Name</label>
+                            <input type="text" id="wkSupervisorName" placeholder="e.g. Ma. Ethel Yatar" class="form-input">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label"><i class="bi bi-briefcase"></i> Supervisor Role</label>
+                            <input type="text" id="wkSupervisorRole" placeholder="e.g. QA Practice Lead" class="form-input">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label"><i class="bi bi-calendar-check"></i> Date Signed</label>
+                            <input type="date" id="wkDateSigned" class="form-input">
+                        </div>
                     </div>
-                    <button class="btn btn-sm btn-outline" id="addDayRowBtn" style="margin-top:10px">
-                        <i class="bi bi-plus"></i> Add Day Row
-                    </button>
+
+                    <!-- Day rows -->
+                    <div class="weekly-days-container" id="weeklyDaysContainer"></div>
+                    <button class="btn btn-sm btn-outline" id="addDayRowBtn" style="margin-top:12px"><i class="bi bi-plus"></i> Add Day Row</button>
 
                     <div class="form-actions" style="margin-top:20px">
                         <button id="saveWeeklyBtn" class="btn btn-primary"><i class="bi bi-save"></i> Save Weekly Report</button>
                     </div>
                 </div>
 
-                <!-- Saved Weekly Reports -->
+                <!-- Saved Reports -->
                 <div class="card">
                     <div class="card-header-row">
                         <h2 class="card-title">Saved Weekly Reports</h2>
                     </div>
-
                     <div id="weeklyReportsList" class="weekly-reports-list">
                         <div class="empty-weekly"><i class="bi bi-journal-x"></i><p>No weekly reports saved yet.</p></div>
                     </div>
                 </div>
             </section>
 
-            <!-- ── REPORT INFO ── -->
+            <!-- REPORT INFO -->
             <section id="section-profile" class="content-section">
                 <div class="card">
                     <div class="card-header-row">
                         <div>
                             <h2 class="card-title">Report Information</h2>
-                            <p class="card-sub">This info appears on your exported Daily Time Report & Weekly Report</p>
+                            <p class="card-sub">This info appears on your exported Daily Time Report (.xlsx)</p>
                         </div>
                     </div>
                     <div class="profile-grid">
@@ -378,7 +328,6 @@
                         <button id="saveProfileBtn" class="btn btn-primary"><i class="bi bi-save"></i> Save Report Info</button>
                     </div>
                 </div>
-
                 <div class="card report-preview">
                     <h2 class="card-title" style="margin-bottom:20px">Export Preview</h2>
                     <div class="preview-report">
@@ -406,7 +355,7 @@
     </div>
 </div>
 
-<!-- Loading Overlay -->
+<!-- Loading -->
 <div id="loadingOverlay" class="loading-overlay hidden">
     <div class="loading-spinner"></div>
     <p>Loading your data...</p>
