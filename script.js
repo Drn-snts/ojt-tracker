@@ -27,12 +27,22 @@ const db = getFirestore(app);
 //  LANDING PAGE HELPERS
 // ============================================================
 window.landingTab = (tab) => {
-    document.getElementById('landingLoginForm').classList.toggle('active', tab === 'login');
-    document.getElementById('landingSignupForm').classList.toggle('active', tab === 'signup');
-    document.getElementById('landingLoginForm').style.display = tab === 'login' ? 'flex' : 'none';
-    document.getElementById('landingSignupForm').style.display = tab === 'signup' ? 'flex' : 'none';
-    document.querySelectorAll('.landing-tab').forEach(t => t.classList.remove('active'));
-    document.querySelectorAll(`.landing-tab[onclick="landingTab('${tab}')"]`).forEach(t => t.classList.add('active'));
+    const loginForm   = document.getElementById('landingLoginForm');
+    const signupForm  = document.getElementById('landingSignupForm');
+    const tabLogin    = document.getElementById('tabLogin');
+    const tabSignup   = document.getElementById('tabSignup');
+
+    if (tab === 'login') {
+        loginForm.classList.add('active');
+        signupForm.classList.remove('active');
+        tabLogin.classList.add('active');
+        tabSignup.classList.remove('active');
+    } else {
+        signupForm.classList.add('active');
+        loginForm.classList.remove('active');
+        tabSignup.classList.add('active');
+        tabLogin.classList.remove('active');
+    }
 };
 
 window.checkLandingPassword = (pw) => {

@@ -54,42 +54,39 @@
                 <span class="landing-auth-logo-sub">Track your training hours like a pro</span>
             </div>
 
+            <!-- SHARED TABS (outside forms so they always show) -->
+            <div class="landing-form-tabs">
+                <button class="landing-tab active" id="tabLogin" onclick="landingTab('login')">Sign In</button>
+                <button class="landing-tab" id="tabSignup" onclick="landingTab('signup')">Sign Up</button>
+            </div>
+
             <!-- LOGIN -->
             <div id="landingLoginForm" class="landing-form active">
-                <div class="landing-form-tabs">
-                    <button class="landing-tab active" onclick="landingTab('login')">Sign In</button>
-                    <button class="landing-tab" onclick="landingTab('signup')">Sign Up</button>
+                <div class="landing-field">
+                    <label>EMAIL</label>
+                    <input type="email" id="lLoginEmail" class="landing-input">
                 </div>
                 <div class="landing-field">
-                    <label>Email</label>
-                    <input type="email" id="lLoginEmail" placeholder="sample@gmail.com" class="landing-input">
-                </div>
-                <div class="landing-field">
-                    <label>Password</label>
-                    <input type="password" id="lLoginPassword" placeholder="••••••••" class="landing-input">
+                    <label>PASSWORD</label>
+                    <input type="password" id="lLoginPassword" class="landing-input">
                 </div>
                 <div class="landing-error" id="lLoginError"></div>
                 <button class="landing-cta" id="lLoginBtn" onclick="handleLandingLogin()">Sign In</button>
-                <p class="landing-forgot" onclick="handleLandingForgot()">Forgot password?</p>
             </div>
 
             <!-- SIGNUP -->
             <div id="landingSignupForm" class="landing-form">
-                <div class="landing-form-tabs">
-                    <button class="landing-tab" onclick="landingTab('login')">Sign In</button>
-                    <button class="landing-tab active" onclick="landingTab('signup')">Sign Up</button>
+                <div class="landing-field">
+                    <label>FULL NAME</label>
+                    <input type="text" id="lSignupName" class="landing-input">
                 </div>
                 <div class="landing-field">
-                    <label>Full Name</label>
-                    <input type="text" id="lSignupName" placeholder="Your name" class="landing-input">
+                    <label>EMAIL</label>
+                    <input type="email" id="lSignupEmail" class="landing-input">
                 </div>
                 <div class="landing-field">
-                    <label>Email</label>
-                    <input type="email" id="lSignupEmail" placeholder="you@email.com" class="landing-input">
-                </div>
-                <div class="landing-field">
-                    <label>Password</label>
-                    <input type="password" id="lSignupPassword" placeholder="Min. 6 characters" class="landing-input" oninput="checkLandingPassword(this.value)">
+                    <label>PASSWORD</label>
+                    <input type="password" id="lSignupPassword" class="landing-input" oninput="checkLandingPassword(this.value)">
                     <div class="password-rules">
                         <span id="lr-lower" class="rule"><i class="bi bi-x-circle"></i> 1 lowercase</span>
                         <span id="lr-upper" class="rule"><i class="bi bi-x-circle"></i> 1 uppercase</span>
@@ -100,8 +97,6 @@
                 <div class="landing-error" id="lSignupError"></div>
                 <button class="landing-cta" id="lSignupBtn" onclick="handleLandingSignup()">Create Account</button>
             </div>
-
-            <p class="landing-terms">By continuing, you agree to our <a href="#">Terms of Service</a>.</p>
         </div>
     </div>
 </div>

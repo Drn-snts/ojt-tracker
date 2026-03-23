@@ -121,7 +121,7 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--t
 .landing-form { display: none; flex-direction: column; gap: 14px; }
 .landing-form.active { display: flex; }
 
-.landing-form-tabs { display: flex; background: rgba(255,255,255,0.05); border-radius: 10px; padding: 3px; gap: 3px; margin-bottom: 4px; }
+.landing-form-tabs { display: flex; background: rgba(255,255,255,0.06); border-radius: 10px; padding: 3px; gap: 3px; margin-bottom: 12px; }
 .landing-tab { flex: 1; padding: 9px; border: none; border-radius: 8px; background: transparent; color: rgba(255,255,255,0.38); font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.18s; }
 .landing-tab.active { background: linear-gradient(135deg, var(--red), var(--red-2)); color: #fff; box-shadow: 0 2px 8px rgba(229,57,53,0.38); }
 
