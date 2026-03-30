@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="styles.css">
     <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/exceljs@4.3.0/dist/exceljs.min.js"></script>
 </head>
 <body>
 
@@ -180,6 +180,9 @@
             <a class="nav-item" onclick="window.safeCall('showSection', 'profile')">
                 <i class="bi bi-person-badge-fill"></i><span>Report Info</span>
             </a>
+            <a class="nav-item" onclick="window.safeCall('showSection', 'export')">
+                <i class="bi bi-file-earmark-excel"></i><span>Export Report</span>
+            </a>
         </nav>
 
         <div class="sidebar-bottom">
@@ -254,9 +257,6 @@
             <div class="card">
                 <div class="card-header-row">
                     <h2 class="card-title"><i class="bi bi-plus-circle"></i> Add Time Entry</h2>
-                    <button type="button" id="duplicateBtn" class="btn btn-sm btn-outline">
-                        <i class="bi bi-copy"></i> Duplicate Last
-                    </button>
                 </div>
                 <div class="form-grid">
                     <div class="form-group">
@@ -307,6 +307,9 @@
                 <div class="card-header-row">
                     <h2 class="card-title">All Time Entries</h2>
                     <div class="table-actions">
+                        <button type="button" id="duplicateBtn" class="btn btn-sm btn-outline">
+                            <i class="bi bi-copy"></i> Duplicate Last
+                        </button>
                         <span class="total-badge">Total: <strong id="totalHours">0.00</strong> hrs</span>
                     </div>
                 </div>
@@ -489,6 +492,29 @@
                         <i class="bi bi-file-earmark-excel"></i> Export Daily Time Report (.xlsx)
                     </button>
                 </div>
+            </div>
+        </section>
+
+        <!-- ── EXPORT REPORT ── -->
+        <section id="section-export" class="content-section">
+            <div class="card">
+                <div class="card-header-row">
+                    <div>
+                        <h2 class="card-title"><i class="bi bi-file-earmark-excel"></i> Export Daily Time Report</h2>
+                        <p class="card-sub">Select a month and download your time entries as an Excel file</p>
+                    </div>
+                </div>
+                <div class="form-group" style="margin-bottom: 24px;">
+                    <label class="form-label">Select Month & Year</label>
+                    <input type="month" id="exportMonth" class="form-input" style="width: 100%; max-width: 200px;">
+                </div>
+                <div class="export-preview-container">
+                    <h3 style="margin-bottom:12px; font-weight: 600; color: var(--text);">Preview</h3>
+                    <div id="exportPreviewTable" class="export-preview-table" style="background: var(--bg-2); border: 1px solid var(--border); border-radius: 8px; padding: 16px;"></div>
+                </div>
+            </div>
+            <div class="actions-bar">
+                <button class="btn btn-primary" onclick="window.calculator?.confirmExportToExcel()"><i class="bi bi-download"></i> Download Excel</button>
             </div>
         </section>
 
