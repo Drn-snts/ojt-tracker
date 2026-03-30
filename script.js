@@ -370,7 +370,7 @@ class OJTCalculator {
     // ---- Duplicate ----
     duplicateEntry() {
         if (!this.entries.length) { this.notify('No previous entry to duplicate!', 'error'); return; }
-        const ex = document.getElementById('pendingRow'); if (ex) ex.remove();
+        if (document.getElementById('pendingRow')) { this.notify('Complete or cancel the current entry first!', 'warning'); return; }
         const last = this.entries[this.entries.length - 1];
         const nextDate = this.dateToInputStr(this.getNextWorkDate(new Date(last.date + 'T00:00:00')));
         const tbody = document.getElementById('tableBody');
@@ -484,6 +484,7 @@ class OJTCalculator {
 
     renderTable() {
         const tbody = document.getElementById('tableBody');
+        if (!tbody) return; // Element doesn't exist yet (landing page still showing)
         tbody.innerHTML = '';
         if (!this.entries.length) { tbody.innerHTML = '<tr class="empty-row"><td colspan="8"><i class="bi bi-inbox"></i> No entries yet.</td></tr>'; return; }
         this.entries.forEach((e, i) => {
@@ -507,6 +508,7 @@ class OJTCalculator {
 
     renderRecent() {
         const tbody = document.getElementById('recentBody');
+        if (!tbody) return; // Element doesn't exist yet (landing page still showing)
         tbody.innerHTML = '';
         if (!this.entries.length) { tbody.innerHTML = '<tr class="empty-row"><td colspan="6"><i class="bi bi-inbox"></i> No entries yet</td></tr>'; return; }
         [...this.entries].slice(-5).reverse().forEach(e => {
@@ -521,21 +523,26 @@ class OJTCalculator {
 
     updateStats() {
         const total = this.totalHours(), rem = this.remainingHours(), days = this.remainingDays(), prog = this.progress();
-        document.getElementById('totalHours').textContent = total;
-        document.getElementById('hoursRendered').textContent = total;
-        document.getElementById('remainingHours').textContent = rem;
-        document.getElementById('remainingDays').textContent = days;
-        document.getElementById('entriesCount').textContent = this.entries.length;
-        document.getElementById('progressFill').style.width = prog + '%';
-        document.getElementById('progressText').textContent = prog + '%';
-        document.getElementById('hoursNeeded').value = this.hoursNeeded;
-        document.getElementById('targetHoursLabel').textContent = this.hoursNeeded;
-        document.getElementById('progressEndLabel').textContent = this.hoursNeeded + ' hrs';
-        document.getElementById('progressMidLabel').textContent = (this.hoursNeeded / 2) + ' hrs';
+        // Safely update elements only if they exist (app screen loaded)
+        const setContent = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+        const setStyle = (id, prop, val) => { const el = document.getElementById(id); if (el) el.style[prop] = val; };
+        const setValue = (id, val) => { const el = document.getElementById(id); if (el) el.value = val; };
+        
+        setContent('totalHours', total);
+        setContent('hoursRendered', total);
+        setContent('remainingHours', rem);
+        setContent('remainingDays', days);
+        setContent('entriesCount', this.entries.length);
+        setStyle('progressFill', 'width', prog + '%');
+        setContent('progressText', prog + '%');
+        setValue('hoursNeeded', this.hoursNeeded);
+        setContent('targetHoursLabel', this.hoursNeeded);
+        setContent('progressEndLabel', this.hoursNeeded + ' hrs');
+        setContent('progressMidLabel', (this.hoursNeeded / 2) + ' hrs');
         const msgs = ['Keep going — every hour counts!', "Solid progress!", "Halfway there!", "Almost done!", "OJT Complete! 🎉"];
-        document.getElementById('progressMsg').textContent = msgs[prog < 25 ? 0 : prog < 50 ? 1 : prog < 75 ? 2 : prog < 100 ? 3 : 4];
+        setContent('progressMsg', msgs[prog < 25 ? 0 : prog < 50 ? 1 : prog < 75 ? 2 : prog < 100 ? 3 : 4]);
         const fill = document.getElementById('progressFill');
-        fill.style.background = prog < 50 ? 'linear-gradient(90deg,#3b82f6,#6366f1)' : prog < 80 ? 'linear-gradient(90deg,#f59e0b,#ef4444)' : 'linear-gradient(90deg,#10b981,#059669)';
+        if (fill) fill.style.background = prog < 50 ? 'linear-gradient(90deg,#3b82f6,#6366f1)' : prog < 80 ? 'linear-gradient(90deg,#f59e0b,#ef4444)' : 'linear-gradient(90deg,#10b981,#059669)';
     }
 
     async updateHoursNeeded() {
@@ -594,6 +601,7 @@ class OJTCalculator {
     // ====================================================================
     initWeeklyDays() {
         const container = document.getElementById('weeklyDaysContainer');
+        if (!container) return; // Element doesn't exist yet (landing page still showing)
         container.innerHTML = '';
         this._dayRowCount = 0;
         for (let i = 0; i < 5; i++) this.addDayRow();
@@ -610,6 +618,7 @@ class OJTCalculator {
         this._dayRowCount++;
         const id = this._dayRowCount;
         const container = document.getElementById('weeklyDaysContainer');
+        if (!container) return; // Element doesn't exist yet (landing page still showing)
         const row = document.createElement('div');
         row.className = 'weekly-day-row';
         row.id = `dayRow-${id}`;
@@ -706,6 +715,7 @@ class OJTCalculator {
 
     renderWeeklyReportsList() {
         const container = document.getElementById('weeklyReportsList');
+        if (!container) return; // Element doesn't exist yet (landing page still showing)
         if (!this.weeklyReports.length) {
             container.innerHTML = '<div class="empty-weekly"><i class="bi bi-journal-x"></i><p>No weekly reports saved yet.</p></div>';
             return;
@@ -966,5 +976,25 @@ class OJTCalculator {
             s.src = src; s.onload = res; s.onerror = rej;
             document.head.appendChild(s);
         });
+    }
+
+    notify(msg, type = 'info') {
+        const notif = document.createElement('div');
+        notif.className = `notification notification-${type}`;
+        notif.textContent = msg;
+        document.body.appendChild(notif);
+        
+        // Trigger animation on next frame
+        requestAnimationFrame(() => {
+            notif.classList.add('show');
+        });
+        
+        // Stay visible for 6 seconds, then fade out over 0.5 seconds
+        setTimeout(() => {
+            notif.classList.remove('show');
+        }, 6000);
+        
+        // Remove from DOM after fade completes
+        setTimeout(() => notif.remove(), 6500);
     }
 }
