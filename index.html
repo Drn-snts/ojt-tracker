@@ -25,8 +25,8 @@
             <span>OJT Tracker</span>
         </div>
         <div class="landing-nav-links">
-            <button class="landing-nav-btn landing-nav-btn-ghost" onclick="window.landingTab('login')">Sign In</button>
-            <button class="landing-nav-btn landing-nav-btn-filled" onclick="window.landingTab('signup')">Get Started Free</button>
+            <button class="landing-nav-btn landing-nav-btn-ghost" onclick="window.safeCall('landingTab', 'login')">Sign In</button>
+            <button class="landing-nav-btn landing-nav-btn-filled" onclick="window.safeCall('landingTab', 'signup')">Get Started Free</button>
         </div>
     </nav>
 
@@ -91,8 +91,8 @@
             </div>
 
             <div class="landing-form-tabs">
-                <button class="landing-tab active" id="tabLogin" onclick="window.landingTab('login')">Sign In</button>
-                <button class="landing-tab" id="tabSignup" onclick="window.landingTab('signup')">Sign Up</button>
+                <button class="landing-tab active" id="tabLogin" onclick="window.safeCall('landingTab', 'login')">Sign In</button>
+                <button class="landing-tab" id="tabSignup" onclick="window.safeCall('landingTab', 'signup')">Sign Up</button>
             </div>
 
             <!-- LOGIN -->
@@ -107,10 +107,10 @@
                         onkeypress="if(event.key==='Enter') window.handleLandingLogin()">
                 </div>
                 <div class="landing-error" id="lLoginError"></div>
-                <button class="landing-cta" id="lLoginBtn" onclick="window.handleLandingLogin()">
+                <button class="landing-cta" id="lLoginBtn" onclick="window.safeCall('handleLandingLogin')">
                     <i class="bi bi-box-arrow-in-right"></i> Sign In
                 </button>
-                <p class="landing-forgot" onclick="window.handleLandingForgot()">
+                <p class="landing-forgot" onclick="window.safeCall('handleLandingForgot')">
                     <i class="bi bi-key"></i> Forgot your password?
                 </p>
             </div>
@@ -128,7 +128,7 @@
                 <div class="landing-field">
                     <label>Password</label>
                     <input type="password" id="lSignupPassword" class="landing-input" placeholder="Min. 6 characters"
-                        oninput="window.checkLandingPassword(this.value)">
+                        oninput="window.safeCall('checkLandingPassword', this.value)">
                     <div class="password-rules">
                         <span class="rule" id="lr-lower"><i class="bi bi-x-circle"></i> 1 lowercase</span>
                         <span class="rule" id="lr-upper"><i class="bi bi-x-circle"></i> 1 uppercase</span>
@@ -137,7 +137,7 @@
                     </div>
                 </div>
                 <div class="landing-error" id="lSignupError"></div>
-                <button class="landing-cta" id="lSignupBtn" onclick="window.handleLandingSignup()">
+                <button class="landing-cta" id="lSignupBtn" onclick="window.safeCall('handleLandingSignup')">
                     <i class="bi bi-person-plus"></i> Create Account — It's Free
                 </button>
             </div>
@@ -168,16 +168,16 @@
         </div>
 
         <nav class="sidebar-nav">
-            <a class="nav-item active" onclick="showSection('dashboard')">
+            <a class="nav-item active" onclick="window.safeCall('showSection', 'dashboard')">
                 <i class="bi bi-grid-1x2-fill"></i><span>Dashboard</span>
             </a>
-            <a class="nav-item" onclick="showSection('entries')">
+            <a class="nav-item" onclick="window.safeCall('showSection', 'entries')">
                 <i class="bi bi-table"></i><span>Time Entries</span>
             </a>
-            <a class="nav-item" onclick="showSection('weekly')">
+            <a class="nav-item" onclick="window.safeCall('showSection', 'weekly')">
                 <i class="bi bi-journal-text"></i><span>Weekly Report</span>
             </a>
-            <a class="nav-item" onclick="showSection('profile')">
+            <a class="nav-item" onclick="window.safeCall('showSection', 'profile')">
                 <i class="bi bi-person-badge-fill"></i><span>Report Info</span>
             </a>
         </nav>
@@ -286,7 +286,7 @@
             <div class="card">
                 <div class="card-header-row">
                     <h2 class="card-title">Recent Entries</h2>
-                    <button class="btn btn-sm btn-outline" onclick="showSection('entries')">View All <i class="bi bi-arrow-right"></i></button>
+                    <button class="btn btn-sm btn-outline" onclick="window.safeCall('showSection', 'entries')">View All <i class="bi bi-arrow-right"></i></button>
                 </div>
                 <div class="table-wrapper">
                     <table class="entries-table">
@@ -502,6 +502,17 @@
     <p>Loading your data...</p>
 </div>
 
+<script>
+    // Create safe wrapper for onclick handlers until script loads
+    window.safeCall = function(fn, ...args) {
+        if (typeof window[fn] === 'function') {
+            return window[fn](...args);
+        } else {
+            console.warn(`Function ${fn} not yet loaded. Retrying...`);
+            setTimeout(() => window.safeCall(fn, ...args), 100);
+        }
+    };
+</script>
 <script type="module" src="script.js"></script>
 </body>
 </html>
