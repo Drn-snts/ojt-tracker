@@ -3,7 +3,7 @@
 // ============================================================
 // Dynamically load content sections for each module
 const moduleLoader = {
-    modules: ['dashboard', 'entries', 'weekly', 'profile', 'export'],
+    modules: ['dashboard', 'entries', 'weekly', 'profile', 'holidays', 'export'],
     mainContent: null,
 
     async init() {
