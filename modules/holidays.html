@@ -1,0 +1,48 @@
+<!-- ── HOLIDAYS ── -->
+<section id="section-holidays" class="content-section">
+
+    <!-- Add Holiday Form -->
+    <div class="card">
+        <div class="card-header-row">
+            <div>
+                <h2 class="card-title"><i class="bi bi-calendar-event"></i> Add Holiday</h2>
+                <p class="card-sub">Mark days off for holidays and special observances</p>
+            </div>
+        </div>
+        
+        <div class="form-group">
+            <label class="form-label"><i class="bi bi-calendar"></i> Holiday Date</label>
+            <input type="date" id="holidayDate" class="form-input">
+        </div>
+
+        <div class="form-group">
+            <label class="form-label"><i class="bi bi-tag"></i> Holiday Name</label>
+            <input type="text" id="holidayName" class="form-input" placeholder="e.g. Christmas, Vacation, Company Event">
+        </div>
+
+        <div class="form-actions">
+            <button class="btn btn-primary" onclick="window.calculator.addHoliday()">
+                <i class="bi bi-plus-lg"></i> Add Holiday
+            </button>
+        </div>
+    </div>
+
+    <!-- Holidays List -->
+    <div class="card">
+        <div class="card-header-row">
+            <h2 class="card-title"><i class="bi bi-calendar2-check"></i> Holidays & Days Off</h2>
+        </div>
+        
+        <div class="table-wrapper">
+            <table class="holidays-table">
+                <thead>
+                    <tr><th>Date</th><th>Holiday Name</th><th>Action</th></tr>
+                </thead>
+                <tbody id="holidaysBody">
+                    <tr class="empty-row"><td colspan="3"><i class="bi bi-inbox"></i> No holidays added yet.</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</section>

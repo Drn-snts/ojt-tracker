@@ -1,9 +1,9 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OJT Tracker — Log It. Prove It. Graduate.</title>
+    <title>OJT Tracker â€” Log It. Prove It. Graduate.</title>
     <link rel="stylesheet" href="styles.css">
     <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
@@ -48,7 +48,7 @@
 
             <p class="landing-sub">
                 The only tool you need to log daily time, generate official reports,
-                and export everything your school actually requires — in seconds, not hours.
+                and export everything your school actually requires â€” in seconds, not hours.
             </p>
 
             <div class="landing-features">
@@ -138,7 +138,7 @@
                 </div>
                 <div class="landing-error" id="lSignupError"></div>
                 <button class="landing-cta" id="lSignupBtn" onclick="window.safeCall('handleLandingSignup')">
-                    <i class="bi bi-person-plus"></i> Create Account — It's Free
+                    <i class="bi bi-person-plus"></i> Create Account â€” It's Free
                 </button>
             </div>
 
@@ -180,6 +180,9 @@
             <a class="nav-item" onclick="window.safeCall('showSection', 'profile')">
                 <i class="bi bi-person-badge-fill"></i><span>Report Info</span>
             </a>
+            <a class="nav-item" onclick="window.safeCall('showSection', 'holidays')">
+                <i class="bi bi-calendar-event"></i><span>Holidays</span>
+            </a>
             <a class="nav-item" onclick="window.safeCall('showSection', 'export')">
                 <i class="bi bi-file-earmark-excel"></i><span>Export Report</span>
             </a>
@@ -218,305 +221,7 @@
             </div>
         </div>
 
-        <!-- ── DASHBOARD ── -->
-        <section id="section-dashboard" class="content-section active">
-            <div class="stats-grid">
-                <div class="stat-card stat-blue">
-                    <div class="stat-top"><span class="stat-label">Hours Rendered</span><i class="bi bi-check-circle-fill stat-icon"></i></div>
-                    <p class="stat-value" id="hoursRendered">0.00</p>
-                    <p class="stat-sub">of <span id="targetHoursLabel">500</span> target hours</p>
-                </div>
-                <div class="stat-card stat-amber">
-                    <div class="stat-top"><span class="stat-label">Remaining</span><i class="bi bi-hourglass-split stat-icon"></i></div>
-                    <p class="stat-value" id="remainingHours">500.00</p>
-                    <p class="stat-sub">hours left to complete</p>
-                </div>
-                <div class="stat-card stat-green">
-                    <div class="stat-top"><span class="stat-label">Est. Days Left</span><i class="bi bi-calendar-check stat-icon"></i></div>
-                    <p class="stat-value" id="remainingDays">62.5</p>
-                    <p class="stat-sub">workdays at 8 hrs/day</p>
-                </div>
-            </div>
-
-            <div class="card progress-card">
-                <div class="progress-header">
-                    <div>
-                        <h2 class="card-title">Overall Progress</h2>
-                        <p class="card-sub" id="progressMsg">Keep going — every hour counts!</p>
-                    </div>
-                    <span class="progress-pct" id="progressText">0%</span>
-                </div>
-                <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
-                <div class="progress-labels">
-                    <span>0 hrs</span>
-                    <span id="progressMidLabel">250 hrs</span>
-                    <span id="progressEndLabel">500 hrs</span>
-                </div>
-            </div>
-
-            <div class="card">
-                <div class="card-header-row">
-                    <h2 class="card-title"><i class="bi bi-plus-circle"></i> Add Time Entry</h2>
-                </div>
-                <div class="form-grid">
-                    <div class="form-group">
-                        <label class="form-label"><i class="bi bi-calendar3"></i> Date</label>
-                        <input type="date" id="date" required class="form-input">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label"><i class="bi bi-clock"></i> Time In</label>
-                        <input type="time" id="timeIn" required class="form-input">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label"><i class="bi bi-clock-history"></i> Time Out</label>
-                        <input type="time" id="timeOut" required class="form-input">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label"><i class="bi bi-cup-hot"></i> Break (mins)</label>
-                        <input type="number" id="breakTime" min="0" max="480" placeholder="0" class="form-input">
-                    </div>
-                </div>
-                <div class="form-actions" style="margin-top:14px">
-                    <button type="button" id="addBtn" class="btn btn-primary">
-                        <i class="bi bi-plus-lg"></i> Add Entry
-                    </button>
-                </div>
-            </div>
-
-            <div class="card">
-                <div class="card-header-row">
-                    <h2 class="card-title">Recent Entries</h2>
-                    <button class="btn btn-sm btn-outline" onclick="window.safeCall('showSection', 'entries')">View All <i class="bi bi-arrow-right"></i></button>
-                </div>
-                <div class="table-wrapper">
-                    <table class="entries-table">
-                        <thead>
-                            <tr><th>Date</th><th>Time In</th><th>Time Out</th><th>Break</th><th>Total Hrs</th><th>Net Hrs</th></tr>
-                        </thead>
-                        <tbody id="recentBody">
-                            <tr class="empty-row"><td colspan="6"><i class="bi bi-inbox"></i> No entries yet</td></tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </section>
-
-        <!-- ── TIME ENTRIES ── -->
-        <section id="section-entries" class="content-section">
-            <div class="card">
-                <div class="card-header-row">
-                    <h2 class="card-title">All Time Entries</h2>
-                    <div class="table-actions">
-                        <button type="button" id="duplicateBtn" class="btn btn-sm btn-outline">
-                            <i class="bi bi-copy"></i> Duplicate Last
-                        </button>
-                        <span class="total-badge">Total: <strong id="totalHours">0.00</strong> hrs</span>
-                    </div>
-                </div>
-                <div class="table-wrapper">
-                    <table class="entries-table" id="hoursTable">
-                        <thead>
-                            <tr><th>#</th><th>Date</th><th>Time In</th><th>Time Out</th><th>Break</th><th>Total Hrs</th><th>Net Hrs</th><th>Action</th></tr>
-                        </thead>
-                        <tbody id="tableBody">
-                            <tr class="empty-row"><td colspan="8"><i class="bi bi-inbox"></i> No entries yet.</td></tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-            <div class="actions-bar">
-                <button id="exportBtn" class="btn btn-primary"><i class="bi bi-file-earmark-excel"></i> Export to Excel</button>
-                <button id="clearBtn" class="btn btn-danger"><i class="bi bi-trash3"></i> Clear All</button>
-            </div>
-        </section>
-
-        <!-- ── WEEKLY REPORT ── -->
-        <section id="section-weekly" class="content-section">
-
-            <!-- Form card -->
-            <div class="card weekly-form-card">
-                <div class="card-header-row">
-                    <div>
-                        <h2 class="card-title"><i class="bi bi-journal-plus"></i> New Weekly Accomplishment Report</h2>
-                        <p class="card-sub">Complete the form below, save it, then download as a .docx file</p>
-                    </div>
-                </div>
-
-                <!-- Student Details -->
-                <div class="weekly-info-block">
-                    <div class="weekly-info-section-label">
-                        <i class="bi bi-person-fill"></i> Student &amp; Report Details
-                    </div>
-                    <div class="weekly-meta-grid">
-                        <div class="form-group">
-                            <label class="form-label"><i class="bi bi-person"></i> Student Name</label>
-                            <input type="text" id="wkStudentName" class="form-input" placeholder="e.g. Ahldrn B. Santos">
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label"><i class="bi bi-calendar-range"></i> Inclusive Dates</label>
-                            <input type="text" id="wkInclusiveDates" class="form-input" placeholder="e.g. Feb 23–27, 2026">
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label"><i class="bi bi-hourglass-bottom"></i> Total Hours this Week</label>
-                            <input type="text" id="wkTotalHours" class="form-input" placeholder="e.g. 40">
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Supervisor -->
-                <div class="weekly-info-block">
-                    <div class="weekly-info-section-label">
-                        <i class="bi bi-patch-check-fill"></i> Supervisor &amp; Certification
-                    </div>
-                    <div class="weekly-sig-grid">
-                        <div class="form-group">
-                            <label class="form-label"><i class="bi bi-person-badge"></i> Supervisor Name</label>
-                            <input type="text" id="wkSupervisorName" class="form-input" placeholder="e.g. Ma. Ethel Yatar">
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label"><i class="bi bi-briefcase"></i> Supervisor Role / Title</label>
-                            <input type="text" id="wkSupervisorRole" class="form-input" placeholder="e.g. QA Practice Lead">
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label"><i class="bi bi-calendar-check"></i> Date Signed</label>
-                            <input type="date" id="wkDateSigned" class="form-input">
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Day rows -->
-                <div class="weekly-days-header">
-                    <div class="weekly-info-section-label" style="margin-bottom:0">
-                        <i class="bi bi-list-check"></i> Daily Entries
-                    </div>
-                    <button class="btn btn-sm btn-outline" id="addDayRowBtn">
-                        <i class="bi bi-plus-lg"></i> Add Day
-                    </button>
-                </div>
-
-                <div class="weekly-days-container" id="weeklyDaysContainer"></div>
-
-                <div class="form-actions weekly-save-bar">
-                    <button class="btn btn-primary" id="saveWeeklyBtn">
-                        <i class="bi bi-floppy-fill"></i> Save Report
-                    </button>
-                    <span class="form-hint"><i class="bi bi-info-circle"></i> Saved reports appear below and can be downloaded as .docx</span>
-                </div>
-            </div>
-
-            <!-- Saved reports -->
-            <div class="card">
-                <div class="card-header-row">
-                    <h2 class="card-title"><i class="bi bi-journals"></i> Saved Weekly Reports</h2>
-                </div>
-                <div id="weeklyReportsList">
-                    <div class="empty-weekly">
-                        <i class="bi bi-journal-x"></i>
-                        <p>No weekly reports saved yet.<br>Fill in the form above and click <strong>Save Report</strong>.</p>
-                    </div>
-                </div>
-            </div>
-
-        </section>
-
-        <!-- ── REPORT INFO ── -->
-        <section id="section-profile" class="content-section">
-            <div class="card">
-                <div class="card-header-row">
-                    <div>
-                        <h2 class="card-title">Report Information</h2>
-                        <p class="card-sub">This info appears on your exported Daily Time Report (.xlsx)</p>
-                    </div>
-                </div>
-                <div class="profile-grid">
-                    <div class="profile-group">
-                        <div class="profile-section-title"><i class="bi bi-person-circle"></i> Student Info</div>
-                        <div class="form-group">
-                            <label class="form-label">Full Name</label>
-                            <input type="text" id="profileName" placeholder="e.g. Juan Dela Cruz" class="form-input">
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">School / University</label>
-                            <input type="text" id="profileSchool" placeholder="e.g. Polytechnic University of the Philippines" class="form-input">
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Company / Department</label>
-                            <input type="text" id="profileCompany" placeholder="e.g. BlastAsia, Inc." class="form-input">
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Period Covered</label>
-                            <input type="text" id="profilePeriod" placeholder="e.g. Month of February" class="form-input">
-                        </div>
-                    </div>
-                    <div class="profile-group">
-                        <div class="profile-section-title"><i class="bi bi-person-badge"></i> OJT Supervisor</div>
-                        <div class="form-group">
-                            <label class="form-label">Supervisor Name</label>
-                            <input type="text" id="profileSupervisor" placeholder="e.g. Ma. Ethel Yatar" class="form-input">
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Supervisor Role / Title</label>
-                            <input type="text" id="profileSupervisorRole" placeholder="e.g. QA Practice Lead" class="form-input">
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Required OJT Hours</label>
-                            <input type="number" id="profileHoursRequired" placeholder="e.g. 500" class="form-input" min="0">
-                        </div>
-                    </div>
-                </div>
-                <div class="form-actions" style="margin-top:24px">
-                    <button id="saveProfileBtn" class="btn btn-primary"><i class="bi bi-floppy-fill"></i> Save Report Info</button>
-                </div>
-            </div>
-
-            <div class="card report-preview">
-                <h2 class="card-title" style="margin-bottom:20px">Export Preview</h2>
-                <div class="preview-report">
-                    <div class="preview-title">DAILY TIME REPORT<br><small>On-the-Job Training</small></div>
-                    <div class="preview-info-grid">
-                        <div class="preview-row"><span class="preview-key">Name:</span><span id="prev-name" class="preview-val">—</span></div>
-                        <div class="preview-row"><span class="preview-key">School / University:</span><span id="prev-school" class="preview-val">—</span></div>
-                        <div class="preview-row"><span class="preview-key">Company / Department:</span><span id="prev-company" class="preview-val">—</span></div>
-                        <div class="preview-row"><span class="preview-key">Period Covered:</span><span id="prev-period" class="preview-val">—</span></div>
-                        <div class="preview-row"><span class="preview-key">Required OJT Hours:</span><span id="prev-hours" class="preview-val">500</span></div>
-                    </div>
-                    <div class="preview-sig">
-                        <p class="preview-certified">Certified Correct:</p>
-                        <div class="preview-sig-name" id="prev-supervisor">—</div>
-                        <div class="preview-sig-role" id="prev-supervisor-role">—</div>
-                        <div class="preview-sig-role">OJT Supervisor / Immediate Head</div>
-                    </div>
-                </div>
-                <div style="margin-top:20px">
-                    <button id="exportBtnProfile" class="btn btn-primary">
-                        <i class="bi bi-file-earmark-excel"></i> Export Daily Time Report (.xlsx)
-                    </button>
-                </div>
-            </div>
-        </section>
-
-        <!-- ── EXPORT REPORT ── -->
-        <section id="section-export" class="content-section">
-            <div class="card">
-                <div class="card-header-row">
-                    <div>
-                        <h2 class="card-title"><i class="bi bi-file-earmark-excel"></i> Export Daily Time Report</h2>
-                        <p class="card-sub">Select a month and download your time entries as an Excel file</p>
-                    </div>
-                </div>
-                <div class="form-group" style="margin-bottom: 24px;">
-                    <label class="form-label">Select Month & Year</label>
-                    <input type="month" id="exportMonth" class="form-input" style="width: 100%; max-width: 200px;">
-                </div>
-                <div class="export-preview-container">
-                    <h3 style="margin-bottom:12px; font-weight: 600; color: var(--text);">Preview</h3>
-                    <div id="exportPreviewTable" class="export-preview-table" style="background: var(--bg-2); border: 1px solid var(--border); border-radius: 8px; padding: 16px;"></div>
-                </div>
-            </div>
-            <div class="actions-bar">
-                <button class="btn btn-primary" onclick="window.calculator?.confirmExportToExcel()"><i class="bi bi-download"></i> Download Excel</button>
-            </div>
-        </section>
+        <!-- Sections loaded dynamically by module-loader.js -->
 
     </main>
 </div>
@@ -539,6 +244,7 @@
         }
     };
 </script>
+<script src="module-loader.js"></script>
 <script type="module" src="script.js"></script>
 </body>
 </html>

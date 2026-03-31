@@ -195,7 +195,10 @@ class OJTCalculator {
         this.includeWeekends = true;
         this.profileData = { name: '', school: '', company: '', period: '', supervisor: '', supervisorRole: '' };
         this.weeklyReports = [];
+        this.holidays = [];
         this._dayRowCount = 0;
+        this._weeklyStartDate = null;
+        this._weeklyEndDate = null;
     }
 
     // ====================================================================
@@ -209,6 +212,7 @@ class OJTCalculator {
         this.populateProfileForm();
         this.render();
         this.renderWeeklyReportsList();
+        this.renderHolidays();
         this.initWeeklyDays();
     }
 
@@ -220,7 +224,8 @@ class OJTCalculator {
                 hoursNeeded: this.hoursNeeded,
                 includeWeekends: this.includeWeekends,
                 profileData: this.profileData,
-                weeklyReports: this.weeklyReports
+                weeklyReports: this.weeklyReports,
+                holidays: this.holidays
             });
         } catch (e) { console.error('Save error:', e); this.notify('Could not save data.', 'error'); }
     }
@@ -239,6 +244,7 @@ class OJTCalculator {
                 this.includeWeekends = d.includeWeekends ?? true;
                 if (d.profileData) this.profileData = { ...this.profileData, ...d.profileData };
                 this.weeklyReports = d.weeklyReports || [];
+                this.holidays = d.holidays || [];
             }
         } catch (e) {
             console.warn('Load warning (using defaults):', e.message);
@@ -258,6 +264,20 @@ class OJTCalculator {
         document.getElementById('saveWeeklyBtn').addEventListener('click', () => this.saveWeeklyReport());
         document.getElementById('addDayRowBtn').addEventListener('click', () => this.addDayRow());
         document.getElementById('timeOut').addEventListener('keypress', e => { if (e.key === 'Enter') this.addEntry(); });
+        // Weekly report date range listeners
+        const startDateEl = document.getElementById('wkStartDate');
+        const endDateEl = document.getElementById('wkEndDate');
+        if (startDateEl) {
+            startDateEl.addEventListener('change', () => {
+                // Set max for end date (6 days after start date = 7 days inclusive)
+                const start = new Date(startDateEl.value + 'T00:00:00');
+                const maxEnd = new Date(start);
+                maxEnd.setDate(maxEnd.getDate() + 6);
+                endDateEl.max = this.dateToInputStr(maxEnd);
+                this.updateWeeklyDateRange();
+            });
+        }
+        if (endDateEl) endDateEl.addEventListener('change', () => this.updateWeeklyDateRange());
     }
 
     // ---- Weekend Toggle ----
@@ -378,6 +398,7 @@ class OJTCalculator {
         const last = this.entries[this.entries.length - 1];
         const nextDate = this.dateToInputStr(this.getNextWorkDate(new Date(last.date + 'T00:00:00')));
         const tbody = document.getElementById('tableBody');
+        if (!tbody) { this.notify('Table not ready yet!', 'error'); return; }
         tbody.querySelector('.empty-row')?.remove();
         const row = document.createElement('tr');
         row.id = 'pendingRow'; row.classList.add('pending-row');
@@ -441,9 +462,13 @@ class OJTCalculator {
         document.getElementById('pendingRow')?.remove();
         const e = this.entries[index];
         const tbody = document.getElementById('tableBody');
-        const row = tbody.querySelectorAll('tr[data-index]')[index];
+        // Select the row correctly by finding the one with the matching data-index
+        const row = tbody.querySelector(`tr[data-index="${index}"]`);
+        if (!row) { this.notify('Entry not found!', 'error'); return; }
+        row.id = 'pendingRow';
+        row.classList.add('pending-row');
         row.innerHTML = `
-            <td>${index+1}</td>
+            <td class="row-number">${index+1}</td>
             <td><input type="date" class="table-input" id="editDate" value="${e.date}"></td>
             <td><input type="time" class="table-input" id="editTimeIn" value="${e.timeIn}"></td>
             <td><input type="time" class="table-input" id="editTimeOut" value="${e.timeOut}"></td>
@@ -494,13 +519,15 @@ class OJTCalculator {
         tbody.innerHTML = '';
         if (!this.entries.length) { tbody.innerHTML = '<tr class="empty-row"><td colspan="8"><i class="bi bi-inbox"></i> No entries yet.</td></tr>'; return; }
         this.entries.forEach((e, i) => {
-            const row = document.createElement('tr'); row.dataset.index = i;
+            const row = document.createElement('tr'); 
+            row.dataset.index = i;
+            row.setAttribute('data-row-number', i + 1); // Store the display number explicitly
             const brk = Number(e.breakMins) || 0;
             let bLbl = '—';
             if (brk > 0) { const h = Math.floor(brk/60), m = brk%60; bLbl = h>0&&m>0?`${h}h ${m}m`:h>0?`${h}h`:`${m}m`; }
             const gross = this.calcHoursQ(e.timeIn, e.timeOut, 0) || parseFloat((e.hours + brk/60).toFixed(2));
             row.innerHTML = `
-                <td style="color:var(--text-3);font-size:12px">${i+1}</td>
+                <td style="color:var(--text-3);font-size:12px" class="row-number">${i+1}</td>
                 <td><strong>${this.formatDate(e.date)}</strong></td>
                 <td>${this.to12h(e.timeIn)}</td><td>${this.to12h(e.timeOut)}</td>
                 <td>${bLbl}</td><td>${gross}</td><td><strong>${e.hours}</strong></td>
@@ -1017,12 +1044,127 @@ class OJTCalculator {
     // ====================================================================
     //  MODULE: WEEKLY REPORT — Form Management & Document Export
     // ====================================================================
+    updateWeeklyDateRange() {
+        const startEl = document.getElementById('wkStartDate');
+        const endEl = document.getElementById('wkEndDate');
+        const infoEl = document.getElementById('dateRangeInfo');
+        if (!startEl || !endEl) return;
+        
+        const startVal = startEl.value;
+        const endVal = endEl.value;
+        
+        if (!startVal || !endVal) {
+            infoEl.textContent = 'Select both dates to set day limit';
+            
+            // Re-enable Add Day button and Total Hours when range is cleared
+            const addDayBtn = document.getElementById('addDayRowBtn');
+            if (addDayBtn) {
+                addDayBtn.style.display = '';
+            }
+            const totalHoursEl = document.getElementById('wkTotalHours');
+            if (totalHoursEl) {
+                totalHoursEl.disabled = false;
+            }
+            
+            return;
+        }
+        
+        const start = new Date(startVal + 'T00:00:00');
+        const end = new Date(endVal + 'T00:00:00');
+        
+        if (start > end) {
+            infoEl.textContent = 'Start date must be before end date';
+            return;
+        }
+        
+        // Calculate days (inclusive)
+        const diffMs = end - start;
+        const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24)) + 1;
+        
+        // Enforce 7-day maximum
+        if (diffDays > 7) {
+            const maxEnd = new Date(start);
+            maxEnd.setDate(maxEnd.getDate() + 6); // 7 days inclusive
+            const maxEndStr = this.dateToInputStr(maxEnd);
+            endEl.value = maxEndStr;
+            infoEl.textContent = '⚠️ Maximum 7 days allowed. End date adjusted.';
+            this.updateWeeklyDateRange(); // Recursively update with correct date
+            return;
+        }
+        
+        infoEl.textContent = `${diffDays} day${diffDays !== 1 ? 's' : ''} selected (Max: 7)`;
+        
+        // Recreate day rows based on selected date range
+        this.updateDayRowsFromRange(startVal, endVal, diffDays);
+        
+        // Update holidays & absences summary
+        this.updateHolidaysAndAbsences(startVal, endVal);
+    }
+    
+    updateDayRowsFromRange(startDate, endDate, dayCount) {
+        const container = document.getElementById('weeklyDaysContainer');
+        if (!container) return;
+        
+        container.innerHTML = '';
+        this._dayRowCount = 0;
+        this._weeklyStartDate = startDate;
+        this._weeklyEndDate = endDate;
+        
+        // Generate all dates in range and populate with entries/holidays/absences
+        const startObj = new Date(startDate + 'T00:00:00');
+        const datesData = []; // Array of { date, entry, holiday, isAbsent }
+        let totalHours = 0;
+        
+        for (let i = 0; i < dayCount; i++) {
+            const currentDate = new Date(startObj);
+            currentDate.setDate(currentDate.getDate() + i);
+            const dateStr = this.dateToInputStr(currentDate);
+            
+            // Find matching time entry for this date
+            const entry = this.entries.find(e => e.date === dateStr);
+            
+            // Find matching holiday for this date
+            const holiday = this.holidays.find(h => h.date === dateStr);
+            
+            // Determine if it's an absence (no entry, no holiday)
+            const isAbsent = !entry && !holiday;
+            
+            // Accumulate total hours
+            if (entry) totalHours += entry.hours || 0;
+            
+            datesData.push({ date: dateStr, entry, holiday, isAbsent });
+        }
+        
+        // Create day rows with auto-populated data
+        datesData.forEach(data => {
+            this.addDayRow(true, data); // Pass day data to populate
+        });
+        
+        // Auto-populate total hours and disable it
+        const totalHoursEl = document.getElementById('wkTotalHours');
+        if (totalHoursEl) {
+            totalHoursEl.value = totalHours.toFixed(2);
+            totalHoursEl.disabled = true;
+        }
+        
+        // Hide Add Day button when date range is selected
+        const addDayBtn = document.getElementById('addDayRowBtn');
+        if (addDayBtn) {
+            addDayBtn.style.display = 'none';
+        }
+        
+        this.updateAddDayButtonState(); // Update once at the end
+    }
+
     initWeeklyDays() {
         const container = document.getElementById('weeklyDaysContainer');
         if (!container) return; // Element doesn't exist yet (landing page still showing)
         container.innerHTML = '';
         this._dayRowCount = 0;
-        for (let i = 0; i < 5; i++) this.addDayRow();
+        this._weeklyStartDate = null;
+        this._weeklyEndDate = null;
+        for (let i = 0; i < 5; i++) this.addDayRow(true); // Skip button update during init
+        this.updateAddDayButtonState(); // Update once at the end
         // Pre-fill student name from profile
         const nameEl = document.getElementById('wkStudentName');
         if (nameEl && !nameEl.value && this.profileData.name) nameEl.value = this.profileData.name;
@@ -1032,29 +1174,69 @@ class OJTCalculator {
         if (roleEl && !roleEl.value && this.profileData.supervisorRole) roleEl.value = this.profileData.supervisorRole;
     }
 
-    addDayRow() {
-        this._dayRowCount++;
-        const id = this._dayRowCount;
+    addDayRow(skipButtonUpdate = false, dayData = null) {
         const container = document.getElementById('weeklyDaysContainer');
         if (!container) return; // Element doesn't exist yet (landing page still showing)
+        // Calculate the day number based on existing rows
+        const currentCount = container.querySelectorAll('.weekly-day-row').length;
+        
+        // Prevent creating more than 7 days
+        if (currentCount >= 7) {
+            this.notify('Maximum 7 days allowed per week!', 'error');
+            return;
+        }
+        
+        const dayNumber = currentCount + 1;
+        this._dayRowCount = Math.max(this._dayRowCount, dayNumber); // Track highest ID for unique element IDs
+        const id = this._dayRowCount;
         const row = document.createElement('div');
         row.className = 'weekly-day-row';
         row.id = `dayRow-${id}`;
+        row.setAttribute('data-day-number', dayNumber); // Store the display number
+        
+        // Build date input with constraints
+        let dateInputAttrs = 'class="form-input"';
+        if (this._weeklyStartDate) dateInputAttrs += ` min="${this._weeklyStartDate}"`;
+        if (this._weeklyEndDate) dateInputAttrs += ` max="${this._weeklyEndDate}"`;
+        // Disable when auto-populated from date range
+        if (dayData) dateInputAttrs += ' disabled';
+        
+        // Prepare values for population
+        const dateVal = dayData?.date || '';
+        let timeVal = '';
+        let timeInputAttrs = 'class="form-input"';
+        // Disable when auto-populated from date range
+        if (dayData) timeInputAttrs += ' disabled';
+        
+        if (dayData) {
+            if (dayData.entry) {
+                // Format time as military format: HH:MM - HH:MM
+                timeVal = `${dayData.entry.timeIn} - ${dayData.entry.timeOut}`;
+            } else if (dayData.holiday) {
+                // Show HOLIDAY
+                timeVal = `HOLIDAY`;
+            } else if (dayData.isAbsent) {
+                // Show ABSENT
+                timeVal = `ABSENT`;
+            }
+        }
+        
+        // Hide delete button when auto-populated from date range
+        const deleteButtonHtml = dayData ? '' : `<button class="weekly-day-remove" onclick="window.calculator.removeDayRow(${id})" title="Remove row"><i class="bi bi-x-lg"></i></button>`;
+        
         row.innerHTML = `
             <div class="weekly-day-header">
-                <span class="weekly-day-label">Day ${id}</span>
-                <button class="weekly-day-remove" onclick="window.calculator.removeDayRow(${id})" title="Remove row">
-                    <i class="bi bi-x-lg"></i>
-                </button>
+                <span class="weekly-day-label">Day ${dayNumber}</span>
+                ${deleteButtonHtml}
             </div>
             <div class="weekly-day-grid">
                 <div class="form-group">
                     <label class="form-label">Date</label>
-                    <input type="date" id="wkDate-${id}" class="form-input">
+                    <input type="date" id="wkDate-${id}" ${dateInputAttrs} value="${dateVal}">
                 </div>
                 <div class="form-group">
                     <label class="form-label">Time-in / Time-out</label>
-                    <input type="text" id="wkTime-${id}" placeholder="e.g. 8:04 - 17:00" class="form-input">
+                    <input type="text" id="wkTime-${id}" placeholder="e.g. 8:04 - 17:00" ${timeInputAttrs} value="${timeVal}">
                 </div>
                 <div class="form-group">
                     <label class="form-label">Task Performed / Key Accomplishments</label>
@@ -1070,21 +1252,112 @@ class OJTCalculator {
                 </div>
             </div>`;
         container.appendChild(row);
+        if (!skipButtonUpdate) this.updateAddDayButtonState();
+    }
+
+    updateAddDayButtonState() {
+        const container = document.getElementById('weeklyDaysContainer');
+        const addBtn = document.getElementById('addDayRowBtn');
+        if (!container || !addBtn) return;
+        
+        const currentCount = container.querySelectorAll('.weekly-day-row').length;
+        const isDisabled = currentCount >= 7;
+        addBtn.disabled = isDisabled;
+        addBtn.title = isDisabled ? 'Maximum 7 days allowed' : 'Add another day';
+        addBtn.style.opacity = isDisabled ? '0.5' : '1';
     }
 
     removeDayRow(id) {
         document.getElementById(`dayRow-${id}`)?.remove();
+        // Renumber all remaining day rows
+        const container = document.getElementById('weeklyDaysContainer');
+        if (!container) return;
+        const rows = container.querySelectorAll('.weekly-day-row');
+        rows.forEach((row, index) => {
+            const dayNumber = index + 1;
+            row.setAttribute('data-day-number', dayNumber);
+            const labelEl = row.querySelector('.weekly-day-label');
+            if (labelEl) labelEl.textContent = `Day ${dayNumber}`;
+        });
+        this.updateAddDayButtonState();
+    }
+
+    updateHolidaysAndAbsences(startDateStr, endDateStr) {
+        const card = document.getElementById('wkHolidaysCard');
+        const summary = document.getElementById('wkHolidaysSummary');
+        if (!card || !summary) return;
+        
+        const start = new Date(startDateStr + 'T00:00:00');
+        const end = new Date(endDateStr + 'T00:00:00');
+        
+        // Generate all dates in range
+        const allDates = [];
+        const current = new Date(start);
+        while (current <= end) {
+            const dateStr = this.dateToInputStr(current);
+            allDates.push({ dateStr, date: new Date(current) });
+            current.setDate(current.getDate() + 1);
+        }
+        
+        // Categorize each date
+        let holidays = [];
+        let absences = [];
+        
+        allDates.forEach(({ dateStr, date }) => {
+            const holiday = this.holidays.find(h => h.date === dateStr);
+            const hasEntry = this.entries.some(e => e.date === dateStr);
+            
+            if (holiday) {
+                holidays.push({ dateStr, name: holiday.name, date });
+            } else if (!hasEntry) {
+                absences.push({ dateStr, date });
+            }
+        });
+        
+        // Build summary HTML
+        if (holidays.length === 0 && absences.length === 0) {
+            card.style.display = 'none';
+            return;
+        }
+        
+        card.style.display = 'block';
+        let html = '';
+        
+        if (holidays.length > 0) {
+            html += '<div style="margin-bottom:12px;"><strong style="color:var(--green);">✓ Holidays/Days Off:</strong><br>';
+            holidays.forEach(h => {
+                const fmt = h.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', weekday: 'short' });
+                html += `<span style="display:inline-block; margin:4px 8px 4px 0; padding:4px 8px; background:rgba(34,197,94,0.1); border-radius:4px;"><i class="bi bi-calendar-event"></i> ${fmt} – ${this.escHtml(h.name)}</span>`;
+            });
+            html += '</div>';
+        }
+        
+        if (absences.length > 0) {
+            html += '<div><strong style="color:var(--orange);">⚠ Absent:</strong><br>';
+            absences.forEach(a => {
+                const fmt = a.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', weekday: 'short' });
+                html += `<span style="display:inline-block; margin:4px 8px 4px 0; padding:4px 8px; background:rgba(234,179,8,0.1); border-radius:4px;"><i class="bi bi-exclamation-triangle"></i> ${fmt}</span>`;
+            });
+            html += '</div>';
+        }
+        
+        summary.innerHTML = html;
+        
+        // Store for export
+        this._weeklyHolidays = holidays;
+        this._weeklyAbsences = absences;
     }
 
     async saveWeeklyReport() {
         const studentName    = document.getElementById('wkStudentName').value.trim();
-        const inclusiveDates = document.getElementById('wkInclusiveDates').value.trim();
+        const startDate      = document.getElementById('wkStartDate').value;
+        const endDate        = document.getElementById('wkEndDate').value;
         const totalHours     = document.getElementById('wkTotalHours').value.trim();
         const supervisorName = document.getElementById('wkSupervisorName').value.trim();
         const supervisorRole = document.getElementById('wkSupervisorRole').value.trim();
         const dateSigned     = document.getElementById('wkDateSigned').value;
 
-        if (!inclusiveDates) { this.notify('Please enter inclusive dates!', 'error'); return; }
+        if (!startDate || !endDate) { this.notify('Please select a date range!', 'error'); return; }
 
         const days = [];
         document.querySelectorAll('.weekly-day-row').forEach(row => {
@@ -1099,6 +1372,9 @@ class OJTCalculator {
 
         if (!days.length) { this.notify('Please add at least one day entry!', 'error'); return; }
 
+        // Format dates as "Feb 23–27, 2026"
+        const inclusiveDates = this.formatDateRange(startDate, endDate);
+
         const report = {
             id: Date.now(),
             studentName: studentName || this.profileData.name,
@@ -1108,6 +1384,8 @@ class OJTCalculator {
             supervisorRole: supervisorRole || this.profileData.supervisorRole,
             dateSigned,
             days,
+            holidays: this._weeklyHolidays || [],
+            absences: this._weeklyAbsences || [],
             createdAt: new Date().toISOString()
         };
 
@@ -1117,10 +1395,29 @@ class OJTCalculator {
         this.notify('Weekly report saved!', 'success');
 
         // Reset form
-        document.getElementById('wkInclusiveDates').value = '';
+        document.getElementById('wkStartDate').value = '';
+        document.getElementById('wkEndDate').value = '';
         document.getElementById('wkTotalHours').value = '';
         document.getElementById('wkDateSigned').value = '';
+        document.getElementById('dateRangeInfo').textContent = 'Select dates to set day limit';
         this.initWeeklyDays();
+    }
+
+    formatDateRange(startStr, endStr) {
+        const start = new Date(startStr + 'T00:00:00');
+        const end = new Date(endStr + 'T00:00:00');
+        const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        const startMon = monthNames[start.getMonth()];
+        const endMon = monthNames[end.getMonth()];
+        const startDay = start.getDate();
+        const endDay = end.getDate();
+        const year = start.getFullYear();
+        
+        if (startMon === endMon) {
+            return `${startMon} ${startDay}–${endDay}, ${year}`;
+        } else {
+            return `${startMon} ${startDay}–${endMon} ${endDay}, ${year}`;
+        }
     }
 
     async deleteWeeklyReport(id) {
@@ -1214,6 +1511,8 @@ class OJTCalculator {
         const supervisorName = report.supervisorName || '';
         const supervisorRole = report.supervisorRole || '';
         const days           = report.days || [];
+        const holidays       = report.holidays || [];
+        const absences       = report.absences || [];
 
         // Format date signed
         let dateSignedDisplay = '';
@@ -1249,6 +1548,44 @@ class OJTCalculator {
   </w:tc>
 </w:tr>`;
         }).join('\n');
+
+        // ── Build holidays/absences XML section ──
+        let holidaysAbsencesXml = '';
+        if (holidays.length > 0 || absences.length > 0) {
+            const holidaysList = holidays.map(h => {
+                const dateStr = h.date ? new Date(h.date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '';
+                return `${dateStr}${h.name ? ' (' + this._xmlEsc(h.name) + ')' : ''}`;
+            }).join(', ');
+            
+            const absencesList = absences.map(a => {
+                const dateStr = a.date ? new Date(a.date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '';
+                return dateStr;
+            }).join(', ');
+
+            holidaysAbsencesXml = `
+    <w:p>
+      <w:pPr><w:spacing w:after="120"/></w:pPr>
+      <w:r><w:rPr><w:b/><w:bCs/></w:rPr><w:t>Holidays &amp; Absences:</w:t></w:r>
+    </w:p>`;
+
+            if (holidays.length > 0) {
+                holidaysAbsencesXml += `
+    <w:p>
+      <w:pPr><w:spacing w:before="60" w:after="60"/></w:pPr>
+      <w:r><w:rPr><w:b/><w:bCs/></w:rPr><w:t>Holidays/Days Off: </w:t></w:r>
+      <w:r><w:t>${this._xmlEsc(holidaysList)}</w:t></w:r>
+    </w:p>`;
+            }
+
+            if (absences.length > 0) {
+                holidaysAbsencesXml += `
+    <w:p>
+      <w:pPr><w:spacing w:before="60" w:after="60"/></w:pPr>
+      <w:r><w:rPr><w:b/><w:bCs/></w:rPr><w:t>Absences: </w:t></w:r>
+      <w:r><w:t>${this._xmlEsc(absencesList)}</w:t></w:r>
+    </w:p>`;
+            }
+        }
 
         const docXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <w:document xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
@@ -1313,6 +1650,7 @@ class OJTCalculator {
       ${tableRowsXml}
     </w:tbl>
     <w:p><w:pPr><w:spacing w:after="240"/></w:pPr></w:p>
+    ${holidaysAbsencesXml}
     <w:p>
       <w:r><w:rPr><w:i/></w:rPr><w:t>Verified by:</w:t></w:r>
     </w:p>
@@ -1414,5 +1752,81 @@ class OJTCalculator {
         
         // Remove from DOM after fade completes
         setTimeout(() => notif.remove(), 6500);
+    }
+
+    // ====================================================================
+    //  MODULE: HOLIDAYS — Holiday & Days Off Management
+    // ====================================================================
+    async addHoliday() {
+        const dateEl = document.getElementById('holidayDate');
+        const nameEl = document.getElementById('holidayName');
+        
+        const date = dateEl?.value;
+        const name = nameEl?.value.trim();
+        
+        if (!date) {
+            this.notify('Please select a date!', 'error');
+            return;
+        }
+        
+        if (!name) {
+            this.notify('Please enter a holiday name!', 'error');
+            return;
+        }
+        
+        // Check for duplicate dates
+        if (this.holidays.some(h => h.date === date)) {
+            this.notify('A holiday already exists for this date!', 'error');
+            return;
+        }
+        
+        this.holidays.push({ id: Date.now(), date, name });
+        this.holidays.sort((a, b) => new Date(a.date) - new Date(b.date));
+        
+        await this.saveToFirestore();
+        this.renderHolidays();
+        
+        // Clear form
+        dateEl.value = '';
+        nameEl.value = '';
+        this.notify('Holiday added!', 'success');
+    }
+    
+    async deleteHoliday(id) {
+        if (!confirm('Delete this holiday?')) return;
+        
+        this.holidays = this.holidays.filter(h => h.id !== id);
+        await this.saveToFirestore();
+        this.renderHolidays();
+        this.notify('Holiday deleted!', 'success');
+    }
+    
+    renderHolidays() {
+        const tbody = document.getElementById('holidaysBody');
+        if (!tbody) return; // Element doesn't exist yet
+        
+        tbody.innerHTML = '';
+        
+        if (!this.holidays.length) {
+            tbody.innerHTML = '<tr class="empty-row"><td colspan="3"><i class="bi bi-inbox"></i> No holidays added yet.</td></tr>';
+            return;
+        }
+        
+        this.holidays.forEach(h => {
+            const row = document.createElement('tr');
+            const dateObj = new Date(h.date + 'T00:00:00');
+            const dateStr = dateObj.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+            
+            row.innerHTML = `
+                <td><strong>${dateStr}</strong></td>
+                <td>${this.escHtml(h.name)}</td>
+                <td>
+                    <button class="btn btn-sm btn-danger" onclick="window.calculator.deleteHoliday(${h.id})">
+                        <i class="bi bi-trash3"></i> Delete
+                    </button>
+                </td>
+            `;
+            tbody.appendChild(row);
+        });
     }
 }
