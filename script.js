@@ -135,7 +135,7 @@ window.showSection = (name) => {
     document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
     document.getElementById(`section-${name}`)?.classList.add('active');
     document.querySelector(`.nav-item[onclick="showSection('${name}')"]`)?.classList.add('active');
-    const titles = { dashboard: 'Dashboard', entries: 'Time Entries', weekly: 'Weekly Report', profile: 'Report Information' };
+    const titles = { dashboard: 'Dashboard', entries: 'Time Entries', weekly: 'Weekly Report', profile: 'Report Information', export: 'Export Report' };
     document.getElementById('topbarTitle').textContent = titles[name] || name;
 };
 
@@ -198,6 +198,9 @@ class OJTCalculator {
         this._dayRowCount = 0;
     }
 
+    // ====================================================================
+    //  INITIALIZATION & FIRESTORE
+    // ====================================================================
     async init() {
         await this.loadFromFirestore();
         this.initEventListeners();
@@ -346,7 +349,9 @@ class OJTCalculator {
         return Math.floor((dateObj - epoch) / 86400000);
     }
 
-    // ---- Add Entry ----
+    // ====================================================================
+    //  MODULE: TIME ENTRIES — CRUD Operations & Management
+    // ====================================================================
     async addEntry() {
         const date = document.getElementById('date').value;
         const tin = document.getElementById('timeIn').value;
@@ -367,7 +372,6 @@ class OJTCalculator {
         this.render();
     }
 
-    // ---- Duplicate ----
     duplicateEntry() {
         if (!this.entries.length) { this.notify('No previous entry to duplicate!', 'error'); return; }
         if (document.getElementById('pendingRow')) { this.notify('Complete or cancel the current entry first!', 'warning'); return; }
@@ -430,6 +434,9 @@ class OJTCalculator {
         await this.saveToFirestore(); this.render(); this.notify('Entry deleted!', 'success');
     }
 
+    // Dashboard Table & Recent Entries Rendering
+    render() { this.renderTable(); this.renderRecent(); this.updateStats(); }
+
     editRow(index) {
         document.getElementById('pendingRow')?.remove();
         const e = this.entries[index];
@@ -473,14 +480,13 @@ class OJTCalculator {
         await this.saveToFirestore(); this.render(); this.notify('Entry updated!', 'success');
     }
 
-    // ---- Stats ----
+    // ====================================================================
+    //  MODULE: DASHBOARD — Statistics & Progress
+    // ====================================================================
     totalHours() { return this.entries.reduce((s, e) => s + e.hours, 0).toFixed(2); }
     remainingHours() { return Math.max(0, this.hoursNeeded - parseFloat(this.totalHours())).toFixed(2); }
     remainingDays() { return (parseFloat(this.remainingHours()) / 8).toFixed(1); }
     progress() { return Math.round(Math.min(100, parseFloat(this.totalHours()) / this.hoursNeeded * 100)); }
-
-    // ---- Render ----
-    render() { this.renderTable(); this.renderRecent(); this.updateStats(); }
 
     renderTable() {
         const tbody = document.getElementById('tableBody');
@@ -559,7 +565,9 @@ class OJTCalculator {
         this.entries = []; await this.saveToFirestore(); this.render(); this.notify('All entries cleared!', 'success');
     }
 
-    // ---- Profile ----
+    // ====================================================================
+    //  MODULE: REPORT INFO — Profile & Export Management
+    // ====================================================================
     populateProfileForm() {
         const p = this.profileData;
         document.getElementById('profileName').value = p.name || '';
@@ -596,8 +604,418 @@ class OJTCalculator {
         this.notify('Report info saved!', 'success');
     }
 
+    async exportToExcel() {
+        // Navigate to export section
+        window.showSection('export');
+        
+        // Set current month as default
+        const today = new Date();
+        const yearMonth = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
+        document.getElementById('exportMonth').value = yearMonth;
+        
+        // Generate initial preview
+        this.generateExportPreview(yearMonth);
+        
+        // Update preview when month changes
+        const monthInput = document.getElementById('exportMonth');
+        monthInput.onchange = (e) => {
+            this.generateExportPreview(e.target.value);
+        };
+    }
+
+    generateExportPreview(yearMonth) {
+        if (!yearMonth) return;
+        
+        const [year, month] = yearMonth.split('-');
+        const filteredEntries = this.entries.filter(e => {
+            const eDate = new Date(e.date + 'T00:00:00');
+            return eDate.getFullYear() === parseInt(year) && eDate.getMonth() === parseInt(month) - 1;
+        });
+        
+        const previewDiv = document.getElementById('exportPreviewTable');
+        
+        if (!filteredEntries.length) {
+            previewDiv.innerHTML = '<div class="export-preview-empty"><i class="bi bi-inbox"></i><p>No entries for this month</p></div>';
+            return;
+        }
+        
+        const monthName = new Date(parseInt(year), parseInt(month) - 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+        const totalHours = filteredEntries.reduce((sum, e) => sum + e.hours, 0).toFixed(2);
+        
+        // Build preview matching PDF format exactly
+        let html = `
+        <!-- Title -->
+        <div style="background: #1f3864; color: white; padding: 16px; margin: -16px -16px 8px -16px; text-align: center; border-radius: 8px 8px 0 0;">
+            <div style="font-size: 22px; font-weight: 700; letter-spacing: 0.5px;">DAILY TIME REPORT</div>
+            <div style="font-size: 13px; margin-top: 6px; opacity: 0.95;">On-the-Job Training</div>
+        </div>
+        
+        <!-- Profile Section - 2 Column Layout -->
+        <table style="width: 100%; border-collapse: collapse; margin-bottom: 16px; font-size: 10px;">
+            <tbody>
+                <tr>
+                    <td style="background: #deeaf1; padding: 8px 12px; border: 1px solid #d0d8e0; font-weight: 600; width: 35%;">Name:</td>
+                    <td style="background: #deeaf1; padding: 8px 12px; border: 1px solid #d0d8e0; width: 40%;">${this.profileData.name || ''}</td>
+                    <td style="background: #deeaf1; padding: 8px 12px; border: 1px solid #d0d8e0; font-weight: 600; width: 25%; text-align: right;">Required OJT Hours:</td>
+                    <td style="background: #deeaf1; padding: 8px 12px; border: 1px solid #d0d8e0; text-align: center; font-weight: 600;">${this.hoursNeeded}</td>
+                </tr>
+                <tr>
+                    <td style="background: #deeaf1; padding: 8px 12px; border: 1px solid #d0d8e0; font-weight: 600;">School / University:</td>
+                    <td style="background: #deeaf1; padding: 8px 12px; border: 1px solid #d0d8e0; font-size: 10px;">${this.profileData.school || ''}</td>
+                    <td style="background: #deeaf1; padding: 8px 12px; border: 1px solid #d0d8e0; font-weight: 600; text-align: right;">Total Hours Rendered:</td>
+                    <td style="background: #deeaf1; padding: 8px 12px; border: 1px solid #d0d8e0; text-align: center; font-weight: 600;">${totalHours}</td>
+                </tr>
+                <tr>
+                    <td style="background: #deeaf1; padding: 8px 12px; border: 1px solid #d0d8e0; font-weight: 600;">Company / Department:</td>
+                    <td style="background: #deeaf1; padding: 8px 12px; border: 1px solid #d0d8e0;">${this.profileData.company || ''}</td>
+                    <td style="background: #deeaf1; padding: 8px 12px; border: 1px solid #d0d8e0;"></td>
+                    <td style="background: #deeaf1; padding: 8px 12px; border: 1px solid #d0d8e0;"></td>
+                </tr>
+                <tr>
+                    <td style="background: #deeaf1; padding: 8px 12px; border: 1px solid #d0d8e0; font-weight: 600;">Period Covered:</td>
+                    <td style="background: #deeaf1; padding: 8px 12px; border: 1px solid #d0d8e0;">Month of ${monthName}</td>
+                    <td style="background: #deeaf1; padding: 8px 12px; border: 1px solid #d0d8e0;"></td>
+                    <td style="background: #deeaf1; padding: 8px 12px; border: 1px solid #d0d8e0;"></td>
+                </tr>
+            </tbody>
+        </table>
+        
+        <!-- Data Table -->
+        <table style="width: 100%; border-collapse: collapse; font-size: 10px; margin-bottom: 8px;">
+            <thead>
+                <tr style="background: #1f3864; color: white;">
+                    <th style="padding: 10px 6px; text-align: center; font-weight: 600; border: 1px solid #1f3864;">No.</th>
+                    <th style="padding: 10px 8px; text-align: center; font-weight: 600; border: 1px solid #1f3864;">Date</th>
+                    <th style="padding: 10px 8px; text-align: center; font-weight: 600; border: 1px solid #1f3864;">Time In</th>
+                    <th style="padding: 10px 8px; text-align: center; font-weight: 600; border: 1px solid #1f3864;">Time Out</th>
+                    <th style="padding: 10px 8px; text-align: center; font-weight: 600; border: 1px solid #1f3864;">Hours Rendered</th>
+                </tr>
+            </thead>
+            <tbody>`;
+        
+        // Add entries
+        filteredEntries.forEach((e, idx) => {
+            const dateObj = new Date(e.date + 'T00:00:00');
+            const dateStr = `${String(dateObj.getMonth() + 1).padStart(2, '0')}/${String(dateObj.getDate()).padStart(2, '0')}, ${dateObj.getFullYear()} (${['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][dateObj.getDay()]})`;
+            const bgColor = idx % 2 === 0 ? '#ffffff' : '#bdd7ee';
+            
+            html += `<tr style="background: ${bgColor};">
+                <td style="padding: 8px 6px; text-align: center; border: 1px solid #d0d8e0;">${idx + 1}</td>
+                <td style="padding: 8px 8px; text-align: center; border: 1px solid #d0d8e0;">${dateStr}</td>
+                <td style="padding: 8px 8px; text-align: center; border: 1px solid #d0d8e0;">${this.to12h(e.timeIn)}</td>
+                <td style="padding: 8px 8px; text-align: center; border: 1px solid #d0d8e0;">${this.to12h(e.timeOut)}</td>
+                <td style="padding: 8px 8px; text-align: center; border: 1px solid #d0d8e0; font-weight: 600;">${e.hours}</td>
+            </tr>`;
+        });
+        
+        // Add empty rows to show the structure (up to 10 rows visible in preview)
+        const emptyRowsNeeded = Math.min(10, 25 - filteredEntries.length);
+        for (let i = 0; i < emptyRowsNeeded; i++) {
+            const rowNum = filteredEntries.length + i + 1;
+            const bgColor = rowNum % 2 === 0 ? '#ffffff' : '#bdd7ee';
+            html += `<tr style="background: ${bgColor};">
+                <td style="padding: 8px 6px; text-align: center; border: 1px solid #d0d8e0;">${rowNum}</td>
+                <td style="padding: 8px 8px; border: 1px solid #d0d8e0;"></td>
+                <td style="padding: 8px 8px; border: 1px solid #d0d8e0;"></td>
+                <td style="padding: 8px 8px; border: 1px solid #d0d8e0;"></td>
+                <td style="padding: 8px 8px; border: 1px solid #d0d8e0;"></td>
+            </tr>`;
+        }
+        
+        html += `</tbody></table>
+        
+        <!-- Footer Note -->
+        <div style="font-size: 10px; color: #666; margin-bottom: 8px; font-style: italic;">
+            * Hours rendered are computed net of 1-hour lunch break, capped at 8 hours/day.
+        </div>
+        
+        <!-- Total Row -->
+        <div style="background: #1f3864; color: white; display: grid; grid-template-columns: 1fr auto; gap: 0;">
+            <div style="padding: 12px 16px; text-align: right; font-weight: 600;">TOTAL HOURS RENDERED</div>
+            <div style="padding: 12px 16px; text-align: center; font-weight: 700; min-width: 100px; border-left: 1px solid rgba(255,255,255,0.2);">${totalHours}</div>
+        </div>`;
+        
+        previewDiv.innerHTML = html;
+    }
+
+    closeExportModal() {
+        // Legacy method - now using section-based navigation
+        // Can optionally navigate away or just return
+    }
+
+    async confirmExportToExcel() {
+        const yearMonth = document.getElementById('exportMonth').value;
+        if (!yearMonth) { this.notify('Select a month!', 'error'); return; }
+        
+        const [year, month] = yearMonth.split('-');
+        const filteredEntries = this.entries.filter(e => {
+            const eDate = new Date(e.date + 'T00:00:00');
+            return eDate.getFullYear() === parseInt(year) && eDate.getMonth() === parseInt(month) - 1;
+        });
+        
+        if (!filteredEntries.length) { this.notify('No entries to export!', 'error'); return; }
+        
+        const monthName = new Date(parseInt(year), parseInt(month) - 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+        const totalHours = filteredEntries.reduce((sum, e) => sum + e.hours, 0);
+        
+        // Helper to format decimal hours to H:MM
+        const formatHM = (dec) => {
+            if (!dec && dec !== 0) return '';
+            const h = Math.floor(dec);
+            const m = Math.round((dec - h) * 60);
+            return `${h}:${m.toString().padStart(2, '0')}`;
+        };
+        
+        // Create workbook with ExcelJS
+        const workbook = new ExcelJS.Workbook();
+        const worksheet = workbook.addWorksheet('Daily Time Report');
+        
+        // Define colors
+        const colors = {
+            navy: 'FF1F3864',
+            profileBg: 'FFDEEAF1',
+            lightBlueBg: 'FFBDD7EE',
+            white: 'FFFFFFFF',
+            darkGray: 'FF000000',
+            labelBlue: 'FF1F3864', // Dark blue for profile Labels
+            lightGray: 'FFA0A0A0', // For row numbers
+            profileBorder: 'FF1F3864',
+            dataBorder: 'FFB4C6E7'
+        };
+        
+        // Set column widths
+        worksheet.columns = [
+            { width: 8 },   // Column A: No.
+            { width: 26 },  // Column B: Date
+            { width: 14 },  // Column C: Time In
+            { width: 14 },  // Column D: Time Out
+            { width: 18 }   // Column E: Hours Rendered
+        ];
+        
+        // Style functions
+        const titleCellStyle = () => ({
+            fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: colors.navy } },
+            font: { name: 'Arial', size: 18, bold: true, color: { argb: colors.white } },
+            alignment: { horizontal: 'center', vertical: 'center' }
+        });
+        
+        const subtitleCellStyle = () => ({
+            fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: colors.navy } },
+            font: { name: 'Arial', size: 10, bold: false, color: { argb: colors.white } },
+            alignment: { horizontal: 'center', vertical: 'center' }
+        });
+        
+        const profileCellStyle = (isLabel = false) => ({
+            fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: isLabel ? colors.lightBlueBg : colors.white } },
+            font: { name: 'Arial', size: 10, bold: isLabel, color: { argb: colors.labelBlue } },
+            alignment: { horizontal: 'left', vertical: 'center', wrapText: true },
+            border: {
+                top: { style: 'thin', color: { argb: colors.profileBorder } },
+                bottom: { style: 'thin', color: { argb: colors.profileBorder } },
+                left: { style: 'thin', color: { argb: colors.profileBorder } },
+                right: { style: 'thin', color: { argb: colors.profileBorder } }
+            }
+        });
+        
+        const headerCellStyle = () => ({
+            fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: colors.navy } },
+            font: { name: 'Arial', size: 10, bold: true, color: { argb: colors.white } },
+            alignment: { horizontal: 'center', vertical: 'center' },
+            border: {
+                top: { style: 'thin', color: { argb: colors.dataBorder } },
+                bottom: { style: 'thin', color: { argb: colors.dataBorder } },
+                left: { style: 'thin', color: { argb: colors.dataBorder } },
+                right: { style: 'thin', color: { argb: colors.dataBorder } }
+            }
+        });
+        
+        const dataCellStyle = (isBlueRow = false, isDate = false, isNo = false) => ({
+            fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: colors.white } },
+            font: { name: 'Arial', size: 10, color: { argb: isNo ? colors.lightGray : colors.darkGray } },
+            alignment: { horizontal: isDate ? 'left' : 'center', vertical: 'center' },
+            border: {
+                top: { style: 'thin', color: { argb: colors.dataBorder } },
+                bottom: { style: 'thin', color: { argb: colors.dataBorder } },
+                left: { style: 'thin', color: { argb: colors.dataBorder } },
+                right: { style: 'thin', color: { argb: colors.dataBorder } }
+            }
+        });
+        
+        const totalCellStyle = (rightAlign = false) => ({
+            fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: colors.white } },
+            font: { name: 'Arial', size: 10, bold: true, color: { argb: rightAlign ? colors.labelBlue : colors.darkGray } },
+            alignment: { horizontal: rightAlign ? 'right' : 'center', vertical: 'center' },
+            border: {
+                top: { style: 'thin', color: { argb: colors.dataBorder } },
+                bottom: { style: 'thin', color: { argb: colors.dataBorder } },
+                left: { style: 'thin', color: { argb: colors.dataBorder } },
+                right: { style: 'thin', color: { argb: colors.dataBorder } }
+            }
+        });
+        
+        // Row 1: Title
+        const row1 = worksheet.addRow(['DAILY TIME REPORT']);
+        row1.height = 28;
+        row1.getCell(1).style = titleCellStyle();
+        worksheet.mergeCells('A1:E1');
+        
+        // Row 2: Subtitle
+        const row2 = worksheet.addRow(['On-the-Job Training']);
+        row2.height = 20;
+        row2.getCell(1).style = subtitleCellStyle();
+        worksheet.mergeCells('A2:E2');
+        
+        // Row 3: Empty
+        worksheet.addRow(['', '', '', '', '']).height = 12;
+        
+        // Row 4: Name
+        const row4 = worksheet.addRow(['Name:', this.profileData.name || '', '', 'Required OJT Hours:', this.hoursNeeded]);
+        row4.height = 20;
+        row4.getCell(1).style = profileCellStyle(true);
+        row4.getCell(2).style = profileCellStyle(false);
+        row4.getCell(3).style = { fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: colors.white } } }; // transparent middle
+        row4.getCell(4).style = profileCellStyle(true);
+        row4.getCell(5).style = profileCellStyle(false);
+        
+        // Row 5: School
+        const row5 = worksheet.addRow(['School / University:', this.profileData.school || '', '', 'Total Hours Rendered:', formatHM(totalHours)]);
+        row5.height = 20;
+        row5.getCell(1).style = profileCellStyle(true);
+        row5.getCell(2).style = profileCellStyle(false);
+        row5.getCell(3).style = { fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: colors.white } } };
+        row5.getCell(4).style = profileCellStyle(true);
+        row5.getCell(5).style = profileCellStyle(false);
+        
+        // Row 6: Company
+        const row6 = worksheet.addRow(['Company / Department:', this.profileData.company || '', '', '', '']);
+        row6.height = 18;
+        row6.getCell(1).style = profileCellStyle(true);
+        row6.getCell(2).style = profileCellStyle(false);
+        for (let i = 3; i <= 5; i++) {
+            row6.getCell(i).style = { fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: colors.white } } };
+        }
+        
+        // Row 7: Period
+        const row7 = worksheet.addRow(['Period Covered:', `Month of ${monthName}`, '', '', '']);
+        row7.height = 18;
+        row7.getCell(1).style = profileCellStyle(true);
+        row7.getCell(2).style = profileCellStyle(false);
+        for (let i = 3; i <= 5; i++) {
+            row7.getCell(i).style = { fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: colors.white } } };
+        }
+        
+        // Row 8: Empty
+        worksheet.addRow(['', '', '', '', '']).height = 12;
+        
+        // Row 9: Headers
+        const headerRow = worksheet.addRow(['No.', 'Date', 'Time In', 'Time Out', 'Hours Rendered']);
+        headerRow.height = 22;
+        for (let i = 1; i <= 5; i++) {
+            headerRow.getCell(i).style = headerCellStyle();
+        }
+        
+        // Rows 10-34: Data
+        for (let i = 0; i < 25; i++) {
+            const rowNum = 10 + i;
+            const row = worksheet.addRow([]);
+            row.height = 20;
+            
+            let dateVal = '';
+            let inVal = '';
+            let outVal = '';
+            let hrsVal = '';
+            
+            if (i < filteredEntries.length) {
+                const e = filteredEntries[i];
+                // Manually format date like "Feb 16, 2026 (Mon)"
+                const dateObj = new Date(e.date + 'T00:00:00');
+                const dtOpts = { month: 'short', day: 'numeric', year: 'numeric' };
+                const dayOpts = { weekday: 'short' };
+                const dtStr = dateObj.toLocaleDateString('en-US', dtOpts);
+                const dayStr = dateObj.toLocaleDateString('en-US', dayOpts);
+                dateVal = `${dtStr} (${dayStr})`;
+                
+                // Manually format time
+                const formatTime = (timeStr) => {
+                    if (!timeStr) return '';
+                    let [h, m] = timeStr.split(':');
+                    h = parseInt(h);
+                    const ampm = h >= 12 ? 'PM' : 'AM';
+                    h = h % 12;
+                    h = h ? h : 12;
+                    return `${h.toString().padStart(2, '0')}:${m} ${ampm}`;
+                };
+                
+                inVal = formatTime(e.timeIn);
+                outVal = formatTime(e.timeOut);
+                hrsVal = formatHM(e.hours);
+            }
+            
+            row.values = [i + 1, dateVal, inVal, outVal, hrsVal];
+            
+            for (let j = 1; j <= 5; j++) {
+                const cell = row.getCell(j);
+                cell.style = dataCellStyle(false, j === 2, j === 1);
+            }
+        }
+        
+        // Next Row: Empty
+        worksheet.addRow(['', '', '', '', '']).height = 12;
+        
+        // Next Row: Total
+        const totalRow = worksheet.addRow(['', 'TOTAL HOURS RENDERED', '', '', formatHM(totalHours)]);
+        totalRow.height = 20;
+        
+        worksheet.mergeCells(`B${totalRow.number}:D${totalRow.number}`);
+        totalRow.getCell(2).style = totalCellStyle(true);
+        totalRow.getCell(3).style = totalCellStyle(true);
+        totalRow.getCell(4).style = totalCellStyle(true);
+        totalRow.getCell(5).style = totalCellStyle(false);
+        totalRow.getCell(1).style = { 
+            border: { top: { style: 'thin', color: { argb: colors.dataBorder } } }
+        };
+        
+        // Rows 37-38: Empty
+        worksheet.addRow(['', '', '', '', '']).height = 15;
+        worksheet.addRow(['', '', '', '', '']).height = 15;
+        
+        // Row 39: Certified Correct
+        const certRow = worksheet.addRow(['Certified Correct:', '', '', '', '']);
+        certRow.height = 18;
+        certRow.getCell(1).font = { name: 'Arial', size: 10, bold: true };
+        
+        // Row 40: Empty
+        worksheet.addRow(['', '', '', '', '']).height = 20;
+        
+        // Row 41: Supervisor name
+        worksheet.addRow(['', this.profileData.supervisor || '', '', '', '']).height = 18;
+        
+        // Row 42: Supervisor role
+        worksheet.addRow(['', this.profileData.supervisorRole || 'OJT Supervisor / Immediate Head', '', '', '']).height = 18;
+        
+        // Row 43: Date line
+        worksheet.addRow(['Date: ___________________________', '', '', '', '']).height = 18;
+        
+        // Generate Excel file
+        try {
+            const buffer = await workbook.xlsx.writeBuffer();
+            const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+            const url = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `Daily_Time_Report_${this.profileData.name || 'Report'}_${yearMonth}.xlsx`;
+            link.click();
+            window.URL.revokeObjectURL(url);
+            
+            this.notify('Excel file downloaded! ✓', 'success');
+        } catch (err) {
+            console.error('Export error:', err);
+            this.notify('Error creating Excel file', 'error');
+        }
+    }
+
     // ====================================================================
-    //  WEEKLY REPORT
+    //  MODULE: WEEKLY REPORT — Form Management & Document Export
     // ====================================================================
     initWeeklyDays() {
         const container = document.getElementById('weeklyDaysContainer');

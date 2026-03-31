@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Export Daily Time Report</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        :root {
+            --bg: #0d0d0d;
+            --surface: #161616;
+            --border: #2a2a2a;
+            --text: #f0f0f0;
+            --text-2: #a0a0a0;
+            --text-3: #555555;
+            --red: #e53935;
+            --radius: 14px;
+        }
+
+        html, body {
+            font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            height: 100%;
+        }
+
+        body {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .modal-content {
+            position: relative;
+            background: var(--surface);
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+            width: 100%;
+            max-width: 700px;
+            display: flex;
+            flex-direction: column;
+            max-height: 90vh;
+        }
+
+        .modal-header {
+            padding: 24px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .modal-header h2 {
+            margin: 0;
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--text);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            color: var(--text-3);
+            font-size: 24px;
+            cursor: pointer;
+            padding: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: color 0.2s;
+        }
+
+        .modal-close:hover {
+            color: var(--text);
+        }
+
+        .modal-body {
+            padding: 24px;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        .form-group {
+            margin-bottom: 24px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-2);
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 12px;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text);
+            font-size: 14px;
+            font-family: inherit;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--red);
+            box-shadow: 0 0 0 2px rgba(229, 57, 53, 0.1);
+        }
+
+        .preview-container {
+            background: var(--bg);
+            border-radius: 8px;
+            padding: 16px;
+            border: 1px solid var(--border);
+            max-height: 350px;
+            overflow-y: auto;
+            margin-top: 16px;
+        }
+
+        .preview-container h3 {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: var(--text-2);
+        }
+
+        .preview-table {
+            width: 100%;
+            font-size: 10px;
+            border-collapse: collapse;
+        }
+
+        .preview-table th {
+            background: var(--surface);
+            padding: 8px;
+            text-align: left;
+            font-weight: 600;
+            color: var(--text-2);
+            border-bottom: 1px solid var(--border);
+            position: sticky;
+            top: 0;
+        }
+
+        .preview-table td {
+            padding: 8px;
+            border-bottom: 1px solid var(--border);
+            color: var(--text-2);
+        }
+
+        .preview-table tr:hover {
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .preview-empty {
+            text-align: center;
+            padding: 32px 16px;
+            color: var(--text-3);
+        }
+
+        .preview-total {
+            padding: 12px 16px;
+            border-top: 1px solid var(--border);
+            margin-top: 12px;
+            text-align: right;
+            font-weight: 600;
+            color: var(--red);
+        }
+
+        .modal-footer {
+            padding: 16px 24px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: inherit;
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-2);
+        }
+
+        .btn-outline:hover {
+            background: var(--border);
+            color: var(--text);
+        }
+
+        .btn-primary {
+            background: var(--red);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #c62828;
+        }
+
+        .btn-primary:active {
+            transform: scale(0.98);
+        }
+
+        .notification {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            padding: 12px 18px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            color: #fff;
+            opacity: 0;
+            transform: translateY(12px);
+            transition: all 0.3s ease-out;
+            z-index: 9999;
+        }
+
+        .notification.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .notification-success {
+            background: #1b5e20;
+            border: 1px solid #2e7d32;
+        }
+
+        .notification-error {
+            background: #c62828;
+            border: 1px solid var(--red);
+        }
+    </style>
+</head>
+<body>
+
+<div class="modal-content">
+    <div class="modal-header">
+        <h2><i class="bi bi-file-earmark-excel"></i> Export Daily Time Report</h2>
+        <button class="modal-close" onclick="closeWindow()"><i class="bi bi-x-lg"></i></button>
+    </div>
+
+    <div class="modal-body">
+        <div class="form-group">
+            <label class="form-label">Select Month & Year</label>
+            <input type="month" id="exportMonth" class="form-input">
+        </div>
+
+        <div class="preview-container">
+            <h3>Preview</h3>
+            <div id="previewContent"></div>
+        </div>
+    </div>
+
+    <div class="modal-footer">
+        <button class="btn btn-outline" onclick="closeWindow()">Cancel</button>
+        <button class="btn btn-primary" onclick="confirmExport()"><i class="bi bi-download"></i> Download Excel</button>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/exceljs@4.3.0/dist/exceljs.min.js"></script>
+    <script>
+        // Get data from parent window
+        const calculatorData = window.opener?.calculator;
+
+    // Set current month as default
+    function initMonth() {
+        const today = new Date();
+        const yearMonth = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
+        document.getElementById('exportMonth').value = yearMonth;
+        generatePreview(yearMonth);
+    }
+
+    // Update preview when month changes
+    document.getElementById('exportMonth').addEventListener('change', (e) => {
+        generatePreview(e.target.value);
+    });
+
+    function generatePreview(yearMonth) {
+        if (!yearMonth || !calculatorData) {
+            document.getElementById('previewContent').innerHTML = '<div class="preview-empty">Unable to load data</div>';
+            return;
+        }
+
+        const [year, month] = yearMonth.split('-');
+        const filteredEntries = calculatorData.entries.filter(e => {
+            const eDate = new Date(e.date + 'T00:00:00');
+            return eDate.getFullYear() === parseInt(year) && eDate.getMonth() === parseInt(month) - 1;
+        });
+
+        const previewDiv = document.getElementById('previewContent');
+
+        if (!filteredEntries.length) {
+            previewDiv.innerHTML = '<div class="preview-empty"><i class="bi bi-inbox"></i><p>No entries for this month</p></div>';
+            return;
+        }
+
+        const monthName = new Date(parseInt(year), parseInt(month) - 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+        const totalHours = filteredEntries.reduce((sum, e) => sum + e.hours, 0).toFixed(2);
+
+        // Build preview matching PDF format exactly
+        let html = `
+        <!-- Title -->
+        <div style="background: #1f3864; color: white; padding: 16px; margin: -16px -16px 8px -16px; text-align: center; border-radius: 8px 8px 0 0;">
+            <div style="font-size: 22px; font-weight: 700; letter-spacing: 0.5px;">DAILY TIME REPORT</div>
+            <div style="font-size: 13px; margin-top: 6px; opacity: 0.95;">On-the-Job Training</div>
+        </div>
+        
+        <!-- Profile Section - 2 Column Layout -->
+        <table style="width: 100%; border-collapse: collapse; margin-bottom: 16px; font-size: 10px;">
+            <tbody>
+                <tr>
+                    <td style="background: #deeaf1; padding: 8px 12px; border: 1px solid #d0d8e0; font-weight: 600; width: 35%; color: #1F3864; text-align: right;">Name:</td>
+                    <td style="background: #ffffff; padding: 8px 12px; border: 1px solid #d0d8e0; width: 40%; color: #000;">${calculatorData.profileData.name || ''}</td>
+                    <td style="background: #deeaf1; padding: 8px 12px; border: 1px solid #d0d8e0; font-weight: 600; width: 25%; text-align: right; color: #1F3864;">Required OJT Hours:</td>
+                    <td style="background: #ffffff; padding: 8px 12px; border: 1px solid #d0d8e0; text-align: center; font-weight: 600; color: #000;">${calculatorData.hoursNeeded}</td>
+                </tr>
+                <tr>
+                    <td style="background: #deeaf1; padding: 8px 12px; border: 1px solid #d0d8e0; font-weight: 600; color: #1F3864; text-align: right;">School / University:</td>
+                    <td style="background: #ffffff; padding: 8px 12px; border: 1px solid #d0d8e0; font-size: 10px; color: #000;">${calculatorData.profileData.school || ''}</td>
+                    <td style="background: #deeaf1; padding: 8px 12px; border: 1px solid #d0d8e0; font-weight: 600; text-align: right; color: #1F3864;">Total Hours Rendered:</td>
+                    <td style="background: #ffffff; padding: 8px 12px; border: 1px solid #d0d8e0; text-align: center; font-weight: 600; color: #000;">${totalHours}</td>
+                </tr>
+                <tr>
+                    <td style="background: #deeaf1; padding: 8px 12px; border: 1px solid #d0d8e0; font-weight: 600; color: #1F3864; text-align: right;">Company / Department:</td>
+                    <td style="background: #ffffff; padding: 8px 12px; border: 1px solid #d0d8e0; color: #000;">${calculatorData.profileData.company || ''}</td>
+                    <td style="background: #deeaf1; padding: 8px 12px; border: 1px solid #d0d8e0;"></td>
+                    <td style="background: #ffffff; padding: 8px 12px; border: 1px solid #d0d8e0;"></td>
+                </tr>
+                <tr>
+                    <td style="background: #deeaf1; padding: 8px 12px; border: 1px solid #d0d8e0; font-weight: 600; color: #1F3864; text-align: right;">Period Covered:</td>
+                    <td style="background: #ffffff; padding: 8px 12px; border: 1px solid #d0d8e0; color: #000;">Month of ${monthName}</td>
+                    <td style="background: #deeaf1; padding: 8px 12px; border: 1px solid #d0d8e0;"></td>
+                    <td style="background: #ffffff; padding: 8px 12px; border: 1px solid #d0d8e0;"></td>
+                </tr>
+            </tbody>
+        </table>
+        
+        <!-- Data Table -->
+        <table style="width: 100%; border-collapse: collapse; font-size: 10px; margin-bottom: 8px;">
+            <thead>
+                <tr style="background: #1f3864; color: white;">
+                    <th style="padding: 10px 6px; text-align: center; font-weight: 600; border: 1px solid #1f3864;">No.</th>
+                    <th style="padding: 10px 8px; text-align: center; font-weight: 600; border: 1px solid #1f3864;">Date</th>
+                    <th style="padding: 10px 8px; text-align: center; font-weight: 600; border: 1px solid #1f3864;">Time In</th>
+                    <th style="padding: 10px 8px; text-align: center; font-weight: 600; border: 1px solid #1f3864;">Time Out</th>
+                    <th style="padding: 10px 8px; text-align: center; font-weight: 600; border: 1px solid #1f3864;">Hours Rendered</th>
+                </tr>
+            </thead>
+            <tbody>`;
+
+        filteredEntries.forEach((e, idx) => {
+            const dateObj = new Date(e.date + 'T00:00:00');
+            const dateStr = `${String(dateObj.getMonth() + 1).padStart(2, '0')}/${String(dateObj.getDate()).padStart(2, '0')}, ${dateObj.getFullYear()} (${['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][dateObj.getDay()]})`;
+            const bgColor = idx % 2 === 0 ? '#ffffff' : '#bdd7ee';
+            
+            html += `<tr style="background: ${bgColor}; color: #000;">
+                <td style="padding: 8px 6px; text-align: center; border: 1px solid #d0d8e0; color: #a0a0a0;">${idx + 1}</td>
+                <td style="padding: 8px 8px; text-align: center; border: 1px solid #d0d8e0;">${dateStr}</td>
+                <td style="padding: 8px 8px; text-align: center; border: 1px solid #d0d8e0;">${to12h(e.timeIn)}</td>
+                <td style="padding: 8px 8px; text-align: center; border: 1px solid #d0d8e0;">${to12h(e.timeOut)}</td>
+                <td style="padding: 8px 8px; text-align: center; border: 1px solid #d0d8e0; font-weight: 600;">${e.hours}</td>
+            </tr>`;
+        });
+
+        const emptyRowsNeeded = Math.min(10, 25 - filteredEntries.length);
+        for (let i = 0; i < emptyRowsNeeded; i++) {
+            const rowNum = filteredEntries.length + i + 1;
+            const bgColor = rowNum % 2 === 0 ? '#ffffff' : '#bdd7ee';
+            html += `<tr style="background: ${bgColor};">
+                <td style="padding: 8px 6px; text-align: center; border: 1px solid #d0d8e0; color: #a0a0a0;">${rowNum}</td>
+                <td style="padding: 8px 8px; border: 1px solid #d0d8e0;"></td>
+                <td style="padding: 8px 8px; border: 1px solid #d0d8e0;"></td>
+                <td style="padding: 8px 8px; border: 1px solid #d0d8e0;"></td>
+                <td style="padding: 8px 8px; border: 1px solid #d0d8e0;"></td>
+            </tr>`;
+        }
+
+        html += `</tbody></table>
+        
+        <!-- Footer Note -->
+        <div style="font-size: 10px; color: #666; margin-bottom: 8px; font-style: italic;">
+            * Hours rendered are computed net of 1-hour lunch break, capped at 8 hours/day.
+        </div>
+        
+        <!-- Total Row -->
+        <div style="background: #1f3864; color: white; display: grid; grid-template-columns: 1fr auto; gap: 0;">
+            <div style="padding: 12px 16px; text-align: right; font-weight: 600;">TOTAL HOURS RENDERED</div>
+            <div style="padding: 12px 16px; text-align: center; font-weight: 700; min-width: 100px; border-left: 1px solid rgba(255,255,255,0.2);">${totalHours}</div>
+        </div>`;
+
+        previewDiv.innerHTML = html;
+    }
+
+    function formatDate(ds) {
+        const d = new Date(ds + 'T00:00:00');
+        const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        return `${months[d.getMonth()]} ${String(d.getDate()).padStart(2, '0')}, ${d.getFullYear()} (${days[d.getDay()]})`;
+    }
+
+    function to12h(t) {
+        const [h, m] = t.split(':');
+        let hr = parseInt(h);
+        const ap = hr >= 12 ? 'PM' : 'AM';
+        if (hr > 12) hr -= 12;
+        if (hr === 0) hr = 12;
+        return `${hr}:${m} ${ap}`;
+    }
+
+    async function confirmExport() {
+        const yearMonth = document.getElementById('exportMonth').value;
+        if (!yearMonth) {
+            showNotification('Select a month!', 'error');
+            return;
+        }
+
+        const [year, month] = yearMonth.split('-');
+        const filteredEntries = calculatorData.entries.filter(e => {
+            const eDate = new Date(e.date + 'T00:00:00');
+            return eDate.getFullYear() === parseInt(year) && eDate.getMonth() === parseInt(month) - 1;
+        });
+
+        if (!filteredEntries.length) {
+            showNotification('No entries to export!', 'error');
+            return;
+        }
+
+        const monthName = new Date(parseInt(year), parseInt(month) - 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+        const totalHours = filteredEntries.reduce((sum, e) => sum + e.hours, 0);
+
+        try {
+            // Helper functions
+            const formatHM = (decimalHours) => {
+                if (!decimalHours) return '0:00';
+                const h = Math.floor(decimalHours);
+                const m = Math.round((decimalHours - h) * 60);
+                return `${h}:${m.toString().padStart(2, '0')}`;
+            };
+
+            const workbook = new ExcelJS.Workbook();
+            workbook.creator = 'OJT Tracker';
+            workbook.created = new Date();
+            
+            const worksheet = workbook.addWorksheet('Time Report', {
+                views: [{ showGridLines: false }]
+            });
+            
+            // Colors matching HTML preview
+            const colors = {
+                navy: 'FF1F3864',       // Dark blue for headers
+                profileBg: 'FFDEEAF1',  // Light blue for profile info
+                lightBlueBg: 'FFBDD7EE',// Light blue for data striping
+                white: 'FFFFFFFF',
+                border: 'FFD0D8E0',
+                darkGray: 'FF000000',
+                labelBlue: 'FF1F3864',  // Dark blue for profile Labels
+                lightGray: 'FFA0A0A0',  // For row numbers
+                profileBorder: 'FF1F3864',
+                dataBorder: 'FFB4C6E7'
+            };
+            
+            // Set column widths
+            worksheet.columns = [
+                { width: 8 },   // Column A: No.
+                { width: 26 },  // Column B: Date
+                { width: 14 },  // Column C: Time In
+                { width: 14 },  // Column D: Time Out
+                { width: 18 }   // Column E: Hours Rendered
+            ];
+            
+            // Style functions
+            const titleCellStyle = () => ({
+                fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: colors.navy } },
+                font: { name: 'Arial', size: 18, bold: true, color: { argb: colors.white } },
+                alignment: { horizontal: 'center', vertical: 'center' }
+            });
+            
+            const subtitleCellStyle = () => ({
+                fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: colors.navy } },
+                font: { name: 'Arial', size: 10, bold: false, color: { argb: colors.white } },
+                alignment: { horizontal: 'center', vertical: 'center' }
+            });
+            
+            const profileCellStyle = (isLabel = false) => ({
+                fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: isLabel ? colors.lightBlueBg : colors.white } },
+                font: { name: 'Arial', size: 10, bold: isLabel, color: { argb: colors.labelBlue } },
+                alignment: { horizontal: 'left', vertical: 'center', wrapText: true },
+                border: {
+                    top: { style: 'thin', color: { argb: colors.profileBorder } },
+                    bottom: { style: 'thin', color: { argb: colors.profileBorder } },
+                    left: { style: 'thin', color: { argb: colors.profileBorder } },
+                    right: { style: 'thin', color: { argb: colors.profileBorder } }
+                }
+            });
+            
+            const headerCellStyle = () => ({
+                fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: colors.navy } },
+                font: { name: 'Arial', size: 10, bold: true, color: { argb: colors.white } },
+                alignment: { horizontal: 'center', vertical: 'center' },
+                border: {
+                    top: { style: 'thin', color: { argb: colors.dataBorder } },
+                    bottom: { style: 'thin', color: { argb: colors.dataBorder } },
+                    left: { style: 'thin', color: { argb: colors.dataBorder } },
+                    right: { style: 'thin', color: { argb: colors.dataBorder } }
+                }
+            });
+            
+            const dataCellStyle = (isBlueRow = false, isDate = false, isNo = false) => ({
+                fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: colors.white } },
+                font: { name: 'Arial', size: 10, color: { argb: isNo ? colors.lightGray : colors.darkGray } },
+                alignment: { horizontal: isDate ? 'left' : 'center', vertical: 'center' },
+                border: {
+                    top: { style: 'thin', color: { argb: colors.dataBorder } },
+                    bottom: { style: 'thin', color: { argb: colors.dataBorder } },
+                    left: { style: 'thin', color: { argb: colors.dataBorder } },
+                    right: { style: 'thin', color: { argb: colors.dataBorder } }
+                }
+            });
+            
+            const totalCellStyle = (rightAlign = false) => ({
+                fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: colors.white } },
+                font: { name: 'Arial', size: 10, bold: true, color: { argb: rightAlign ? colors.labelBlue : colors.darkGray } },
+                alignment: { horizontal: rightAlign ? 'right' : 'center', vertical: 'center' },
+                border: {
+                    top: { style: 'thin', color: { argb: colors.dataBorder } },
+                    bottom: { style: 'thin', color: { argb: colors.dataBorder } },
+                    left: { style: 'thin', color: { argb: colors.dataBorder } },
+                    right: { style: 'thin', color: { argb: colors.dataBorder } }
+                }
+            });
+            
+            // Row 1: Title
+            const row1 = worksheet.addRow(['DAILY TIME REPORT']);
+            row1.height = 28;
+            row1.getCell(1).style = titleCellStyle();
+            worksheet.mergeCells('A1:E1');
+            
+            // Row 2: Subtitle
+            const row2 = worksheet.addRow(['On-the-Job Training']);
+            row2.height = 20;
+            row2.getCell(1).style = subtitleCellStyle();
+            worksheet.mergeCells('A2:E2');
+            
+            // Row 3: Empty
+            worksheet.addRow(['', '', '', '', '']).height = 12;
+            
+            // Row 4: Name
+            const row4 = worksheet.addRow(['Name:', calculatorData.profileData.name || '', '', 'Required OJT Hours:', calculatorData.hoursNeeded]);
+            row4.height = 20;
+            row4.getCell(1).style = profileCellStyle(true);
+            row4.getCell(2).style = profileCellStyle(false);
+            row4.getCell(3).style = { fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: colors.white } } }; // transparent middle
+            row4.getCell(4).style = profileCellStyle(true);
+            row4.getCell(5).style = profileCellStyle(false);
+            
+            // Row 5: School
+            const row5 = worksheet.addRow(['School / University:', calculatorData.profileData.school || '', '', 'Total Hours Rendered:', formatHM(totalHours)]);
+            row5.height = 20;
+            row5.getCell(1).style = profileCellStyle(true);
+            row5.getCell(2).style = profileCellStyle(false);
+            row5.getCell(3).style = { fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: colors.white } } };
+            row5.getCell(4).style = profileCellStyle(true);
+            row5.getCell(5).style = profileCellStyle(false);
+            
+            // Row 6: Company
+            const row6 = worksheet.addRow(['Company / Department:', calculatorData.profileData.company || '', '', '', '']);
+            row6.height = 18;
+            row6.getCell(1).style = profileCellStyle(true);
+            row6.getCell(2).style = profileCellStyle(false);
+            for (let i = 3; i <= 5; i++) {
+                row6.getCell(i).style = { fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: colors.white } } };
+            }
+            
+            // Row 7: Period
+            const row7 = worksheet.addRow(['Period Covered:', `Month of ${monthName}`, '', '', '']);
+            row7.height = 18;
+            row7.getCell(1).style = profileCellStyle(true);
+            row7.getCell(2).style = profileCellStyle(false);
+            for (let i = 3; i <= 5; i++) {
+                row7.getCell(i).style = { fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: colors.white } } };
+            }
+            
+            // Row 8: Empty
+            worksheet.addRow(['', '', '', '', '']).height = 12;
+            
+            // Row 9: Headers
+            const headerRow = worksheet.addRow(['No.', 'Date', 'Time In', 'Time Out', 'Hours Rendered']);
+            headerRow.height = 22;
+            for (let i = 1; i <= 5; i++) {
+                headerRow.getCell(i).style = headerCellStyle();
+            }
+            
+            // Rows 10-34: Data
+            for (let i = 0; i < 25; i++) {
+                const row = worksheet.addRow([]);
+                row.height = 20;
+                
+                let dateVal = '';
+                let inVal = '';
+                let outVal = '';
+                let hrsVal = '';
+                
+                if (i < filteredEntries.length) {
+                    const e = filteredEntries[i];
+                    // Manually format date like "Feb 16, 2026 (Mon)"
+                    const dateObj = new Date(e.date + 'T00:00:00');
+                    const dtOpts = { month: 'short', day: 'numeric', year: 'numeric' };
+                    const dayOpts = { weekday: 'short' };
+                    const dtStr = dateObj.toLocaleDateString('en-US', dtOpts);
+                    const dayStr = dateObj.toLocaleDateString('en-US', dayOpts);
+                    dateVal = `${dtStr} (${dayStr})`;
+                    
+                    // Manually format time
+                    const formatTime = (timeStr) => {
+                        if (!timeStr) return '';
+                        let [h, m] = timeStr.split(':');
+                        h = parseInt(h);
+                        const ampm = h >= 12 ? 'PM' : 'AM';
+                        h = h % 12;
+                        h = h ? h : 12;
+                        return `${h.toString().padStart(2, '0')}:${m} ${ampm}`;
+                    };
+                    
+                    inVal = formatTime(e.timeIn);
+                    outVal = formatTime(e.timeOut);
+                    hrsVal = formatHM(e.hours);
+                }
+                
+                row.values = [i + 1, dateVal, inVal, outVal, hrsVal];
+                
+                for (let j = 1; j <= 5; j++) {
+                    const cell = row.getCell(j);
+                    cell.style = dataCellStyle(false, j === 2, j === 1);
+                }
+            }
+            
+            // Next Row: Empty
+            worksheet.addRow(['', '', '', '', '']).height = 12;
+            
+            // Next Row: Total
+            const totalRow = worksheet.addRow(['', 'TOTAL HOURS RENDERED', '', '', formatHM(totalHours)]);
+            totalRow.height = 20;
+            
+            worksheet.mergeCells(`B${totalRow.number}:D${totalRow.number}`);
+            totalRow.getCell(2).style = totalCellStyle(true);
+            totalRow.getCell(3).style = totalCellStyle(true);
+            totalRow.getCell(4).style = totalCellStyle(true);
+            totalRow.getCell(5).style = totalCellStyle(false);
+            totalRow.getCell(1).style = { 
+                border: { top: { style: 'thin', color: { argb: colors.dataBorder } } }
+            };
+            
+            // Rows 37-38: Empty
+            worksheet.addRow(['', '', '', '', '']).height = 15;
+            worksheet.addRow(['', '', '', '', '']).height = 15;
+            
+            // Row 39: Certified Correct
+            const certRow = worksheet.addRow(['Certified Correct:', '', '', '', '']);
+            certRow.height = 18;
+            certRow.getCell(1).font = { name: 'Arial', size: 10, bold: true };
+            
+            // Row 40: Empty
+            worksheet.addRow(['', '', '', '', '']).height = 20;
+            
+            // Row 41: Supervisor name
+            worksheet.addRow(['', calculatorData.profileData.supervisor || '', '', '', '']).height = 18;
+            
+            // Row 42: Supervisor role
+            worksheet.addRow(['', calculatorData.profileData.supervisorRole || 'OJT Supervisor / Immediate Head', '', '', '']).height = 18;
+            
+            // Row 43: Date line
+            worksheet.addRow(['Date: ___________________________', '', '', '', '']).height = 18;
+            
+            // Generate Excel file
+            const buffer = await workbook.xlsx.writeBuffer();
+            const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+            const url = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `Daily_Time_Report_${calculatorData.profileData.name || 'Report'}_${yearMonth}.xlsx`;
+            link.click();
+            window.URL.revokeObjectURL(url);
+            
+            showNotification('Excel file downloaded! ✓', 'success');
+            setTimeout(() => closeWindow(), 1500);
+        } catch (err) {
+            console.error('Export error:', err);
+            showNotification('Error creating Excel file', 'error');
+        }
+    }
+
+    function showNotification(msg, type = 'info') {
+        const notif = document.createElement('div');
+        notif.className = `notification notification-${type}`;
+        notif.textContent = msg;
+        document.body.appendChild(notif);
+
+        requestAnimationFrame(() => {
+            notif.classList.add('show');
+        });
+
+        setTimeout(() => notif.remove(), 3000);
+    }
+
+    function closeWindow() {
+        window.close();
+    }
+
+    // Initialize when page loads
+    window.addEventListener('load', initMonth);
+</script>
+
+</body>
+</html>
