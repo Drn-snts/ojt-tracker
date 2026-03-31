@@ -1238,6 +1238,7 @@ class OJTCalculator {
                     <label class="form-label">Time-in / Time-out</label>
                     <input type="text" id="wkTime-${id}" placeholder="e.g. 8:04 - 17:00" ${timeInputAttrs} value="${timeVal}">
                 </div>
+                ${dayData && (dayData.holiday || dayData.isAbsent) ? '' : `
                 <div class="form-group">
                     <label class="form-label">Task Performed / Key Accomplishments</label>
                     <textarea id="wkTask-${id}" class="form-input" placeholder="Describe tasks & accomplishments..."></textarea>
@@ -1250,6 +1251,7 @@ class OJTCalculator {
                     <label class="form-label">Problems / Challenges Encountered</label>
                     <textarea id="wkProblems-${id}" class="form-input" placeholder="Describe any issues encountered..."></textarea>
                 </div>
+                `}
             </div>`;
         container.appendChild(row);
         if (!skipButtonUpdate) this.updateAddDayButtonState();
