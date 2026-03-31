@@ -10,6 +10,22 @@
                 <span class="total-badge">Total: <strong id="totalHours">0.00</strong> hrs</span>
             </div>
         </div>
+
+        <!-- Filter Section -->
+        <div style="padding: 16px; border-bottom: 1px solid var(--border); background: var(--bg-secondary);">
+            <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+                <div style="display: flex; gap: 8px; align-items: center;">
+                    <label style="font-size: 13px; font-weight: 500; color: var(--text-2);">Filter:</label>
+                    <input type="date" id="filterStartDate" class="form-input" style="font-size: 13px; padding: 6px 8px;">
+                    <span style="color: var(--text-3);">to</span>
+                    <input type="date" id="filterEndDate" class="form-input" style="font-size: 13px; padding: 6px 8px;">
+                </div>
+                <button class="btn btn-sm btn-outline" id="clearFilterBtn" style="font-size: 12px;">
+                    <i class="bi bi-x-circle"></i> Clear Filter
+                </button>
+                <span style="font-size: 12px; color: var(--text-3); margin-left: auto;" id="filterInfo">Showing all entries</span>
+            </div>
+        </div>
         <div class="table-wrapper">
             <table class="entries-table" id="hoursTable">
                 <thead>

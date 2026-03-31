@@ -199,6 +199,9 @@ class OJTCalculator {
         this._dayRowCount = 0;
         this._weeklyStartDate = null;
         this._weeklyEndDate = null;
+        this._filterStartDate = null;
+        this._filterEndDate = null;
+        this._filteredEntries = [];
     }
 
     // ====================================================================
@@ -210,6 +213,7 @@ class OJTCalculator {
         this.setupDatePicker();
         this.setupWeekendToggle();
         this.populateProfileForm();
+        this.initEntryFilter(); // Initialize filter to current month
         this.render();
         this.renderWeeklyReportsList();
         this.renderHolidays();
@@ -264,6 +268,13 @@ class OJTCalculator {
         document.getElementById('saveWeeklyBtn').addEventListener('click', () => this.saveWeeklyReport());
         document.getElementById('addDayRowBtn').addEventListener('click', () => this.addDayRow());
         document.getElementById('timeOut').addEventListener('keypress', e => { if (e.key === 'Enter') this.addEntry(); });
+        // Time entries filter listeners
+        const filterStartEl = document.getElementById('filterStartDate');
+        const filterEndEl = document.getElementById('filterEndDate');
+        const clearFilterBtn = document.getElementById('clearFilterBtn');
+        if (filterStartEl) filterStartEl.addEventListener('change', () => this.applyFilter());
+        if (filterEndEl) filterEndEl.addEventListener('change', () => this.applyFilter());
+        if (clearFilterBtn) clearFilterBtn.addEventListener('click', () => this.clearFilter());
         // Weekly report date range listeners
         const startDateEl = document.getElementById('wkStartDate');
         const endDateEl = document.getElementById('wkEndDate');
@@ -455,6 +466,80 @@ class OJTCalculator {
         await this.saveToFirestore(); this.render(); this.notify('Entry deleted!', 'success');
     }
 
+    // ====================================================================
+    //  MODULE: TIME ENTRIES — FILTERING
+    // ====================================================================
+    initEntryFilter() {
+        // Set filter to current month on initialization
+        const today = new Date();
+        const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+        const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+        
+        this._filterStartDate = this.dateToInputStr(firstDay);
+        this._filterEndDate = this.dateToInputStr(lastDay);
+        
+        const filterStartEl = document.getElementById('filterStartDate');
+        const filterEndEl = document.getElementById('filterEndDate');
+        if (filterStartEl) filterStartEl.value = this._filterStartDate;
+        if (filterEndEl) filterEndEl.value = this._filterEndDate;
+        
+        this.applyFilter();
+    }
+
+    applyFilter() {
+        const filterStartEl = document.getElementById('filterStartDate');
+        const filterEndEl = document.getElementById('filterEndDate');
+        
+        if (!filterStartEl || !filterEndEl) return;
+        
+        const startVal = filterStartEl.value;
+        const endVal = filterEndEl.value;
+        
+        if (!startVal || !endVal) {
+            this._filteredEntries = [...this.entries];
+        } else {
+            const start = new Date(startVal + 'T00:00:00');
+            const end = new Date(endVal + 'T23:59:59');
+            this._filteredEntries = this.entries.filter(e => {
+                const eDate = new Date(e.date + 'T00:00:00');
+                return eDate >= start && eDate <= end;
+            });
+        }
+        
+        this._filterStartDate = startVal;
+        this._filterEndDate = endVal;
+        this.updateFilterInfo();
+        this.render();
+    }
+
+    clearFilter() {
+        const today = new Date();
+        const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+        const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+        
+        const filterStartEl = document.getElementById('filterStartDate');
+        const filterEndEl = document.getElementById('filterEndDate');
+        
+        if (filterStartEl) filterStartEl.value = this.dateToInputStr(firstDay);
+        if (filterEndEl) filterEndEl.value = this.dateToInputStr(lastDay);
+        
+        this.applyFilter();
+    }
+
+    updateFilterInfo() {
+        const filterInfo = document.getElementById('filterInfo');
+        if (!filterInfo) return;
+        
+        const totalCount = this.entries.length;
+        const filteredCount = this._filteredEntries.length;
+        
+        if (filteredCount === totalCount) {
+            filterInfo.textContent = `Showing all ${totalCount} entries`;
+        } else {
+            filterInfo.textContent = `Showing ${filteredCount} of ${totalCount} entries`;
+        }
+    }
+
     // Dashboard Table & Recent Entries Rendering
     render() { this.renderTable(); this.renderRecent(); this.updateStats(); }
 
@@ -517,17 +602,20 @@ class OJTCalculator {
         const tbody = document.getElementById('tableBody');
         if (!tbody) return; // Element doesn't exist yet (landing page still showing)
         tbody.innerHTML = '';
-        if (!this.entries.length) { tbody.innerHTML = '<tr class="empty-row"><td colspan="8"><i class="bi bi-inbox"></i> No entries yet.</td></tr>'; return; }
-        this.entries.forEach((e, i) => {
+        const entriesToRender = this._filteredEntries.length > 0 ? this._filteredEntries : this.entries;
+        if (!entriesToRender.length) { tbody.innerHTML = '<tr class="empty-row"><td colspan="8"><i class="bi bi-inbox"></i> No entries in this period.</td></tr>'; return; }
+        entriesToRender.forEach((e, displayIndex) => {
+            const actualIndex = this.entries.indexOf(e);
+            const i = actualIndex >= 0 ? actualIndex : displayIndex;
             const row = document.createElement('tr'); 
             row.dataset.index = i;
-            row.setAttribute('data-row-number', i + 1); // Store the display number explicitly
+            row.setAttribute('data-row-number', displayIndex + 1); // Store the display number for filtered view
             const brk = Number(e.breakMins) || 0;
             let bLbl = '—';
             if (brk > 0) { const h = Math.floor(brk/60), m = brk%60; bLbl = h>0&&m>0?`${h}h ${m}m`:h>0?`${h}h`:`${m}m`; }
             const gross = this.calcHoursQ(e.timeIn, e.timeOut, 0) || parseFloat((e.hours + brk/60).toFixed(2));
             row.innerHTML = `
-                <td style="color:var(--text-3);font-size:12px" class="row-number">${i+1}</td>
+                <td style="color:var(--text-3);font-size:12px" class="row-number">${displayIndex+1}</td>
                 <td><strong>${this.formatDate(e.date)}</strong></td>
                 <td>${this.to12h(e.timeIn)}</td><td>${this.to12h(e.timeOut)}</td>
                 <td>${bLbl}</td><td>${gross}</td><td><strong>${e.hours}</strong></td>
