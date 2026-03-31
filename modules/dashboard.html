@@ -1,0 +1,82 @@
+<!-- ── DASHBOARD ── -->
+<section id="section-dashboard" class="content-section active">
+    <div class="stats-grid">
+        <div class="stat-card stat-blue">
+            <div class="stat-top"><span class="stat-label">Hours Rendered</span><i class="bi bi-check-circle-fill stat-icon"></i></div>
+            <p class="stat-value" id="hoursRendered">0.00</p>
+            <p class="stat-sub">of <span id="targetHoursLabel">500</span> target hours</p>
+        </div>
+        <div class="stat-card stat-amber">
+            <div class="stat-top"><span class="stat-label">Remaining</span><i class="bi bi-hourglass-split stat-icon"></i></div>
+            <p class="stat-value" id="remainingHours">500.00</p>
+            <p class="stat-sub">hours left to complete</p>
+        </div>
+        <div class="stat-card stat-green">
+            <div class="stat-top"><span class="stat-label">Est. Days Left</span><i class="bi bi-calendar-check stat-icon"></i></div>
+            <p class="stat-value" id="remainingDays">62.5</p>
+            <p class="stat-sub">workdays at 8 hrs/day</p>
+        </div>
+    </div>
+
+    <div class="card progress-card">
+        <div class="progress-header">
+            <div>
+                <h2 class="card-title">Overall Progress</h2>
+                <p class="card-sub" id="progressMsg">Keep going — every hour counts!</p>
+            </div>
+            <span class="progress-pct" id="progressText">0%</span>
+        </div>
+        <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+        <div class="progress-labels">
+            <span>0 hrs</span>
+            <span id="progressMidLabel">250 hrs</span>
+            <span id="progressEndLabel">500 hrs</span>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header-row">
+            <h2 class="card-title"><i class="bi bi-plus-circle"></i> Add Time Entry</h2>
+        </div>
+        <div class="form-grid">
+            <div class="form-group">
+                <label class="form-label"><i class="bi bi-calendar3"></i> Date</label>
+                <input type="date" id="date" required class="form-input">
+            </div>
+            <div class="form-group">
+                <label class="form-label"><i class="bi bi-clock"></i> Time In</label>
+                <input type="time" id="timeIn" required class="form-input">
+            </div>
+            <div class="form-group">
+                <label class="form-label"><i class="bi bi-clock-history"></i> Time Out</label>
+                <input type="time" id="timeOut" required class="form-input">
+            </div>
+            <div class="form-group">
+                <label class="form-label"><i class="bi bi-cup-hot"></i> Break (mins)</label>
+                <input type="number" id="breakTime" min="0" max="480" placeholder="0" class="form-input">
+            </div>
+        </div>
+        <div class="form-actions" style="margin-top:14px">
+            <button type="button" id="addBtn" class="btn btn-primary">
+                <i class="bi bi-plus-lg"></i> Add Entry
+            </button>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header-row">
+            <h2 class="card-title">Recent Entries</h2>
+            <button class="btn btn-sm btn-outline" onclick="window.safeCall('showSection', 'entries')">View All <i class="bi bi-arrow-right"></i></button>
+        </div>
+        <div class="table-wrapper">
+            <table class="entries-table">
+                <thead>
+                    <tr><th>Date</th><th>Time In</th><th>Time Out</th><th>Break</th><th>Total Hrs</th><th>Net Hrs</th></tr>
+                </thead>
+                <tbody id="recentBody">
+                    <tr class="empty-row"><td colspan="6"><i class="bi bi-inbox"></i> No entries yet</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>

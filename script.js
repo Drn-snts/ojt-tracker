@@ -378,6 +378,7 @@ class OJTCalculator {
         const last = this.entries[this.entries.length - 1];
         const nextDate = this.dateToInputStr(this.getNextWorkDate(new Date(last.date + 'T00:00:00')));
         const tbody = document.getElementById('tableBody');
+        if (!tbody) { this.notify('Table not ready yet!', 'error'); return; }
         tbody.querySelector('.empty-row')?.remove();
         const row = document.createElement('tr');
         row.id = 'pendingRow'; row.classList.add('pending-row');
@@ -390,8 +391,8 @@ class OJTCalculator {
             <td id="pendingGross">${this.calcHoursQ(last.timeIn, last.timeOut, 0)}</td>
             <td id="pendingHours">${last.hours}</td>
             <td class="pending-actions">
-                <button class="save-btn" onclick="window.calculator.savePendingRow()"><i class="bi bi-check-lg"></i></button>
-                <button class="cancel-btn" onclick="window.calculator.cancelPendingRow()"><i class="bi bi-x-lg"></i></button>
+                <button class="save-btn" onclick="window.safeCall('savePendingRow')"><i class="bi bi-check-lg"></i></button>
+                <button class="cancel-btn" onclick="window.safeCall('cancelPendingRow')"><i class="bi bi-x-lg"></i></button>
             </td>`;
         tbody.appendChild(row);
         const upd = () => {
@@ -441,9 +442,13 @@ class OJTCalculator {
         document.getElementById('pendingRow')?.remove();
         const e = this.entries[index];
         const tbody = document.getElementById('tableBody');
-        const row = tbody.querySelectorAll('tr[data-index]')[index];
+        // Select the row correctly by finding the one with the matching data-index
+        const row = tbody.querySelector(`tr[data-index="${index}"]`);
+        if (!row) { this.notify('Entry not found!', 'error'); return; }
+        row.id = 'pendingRow';
+        row.classList.add('pending-row');
         row.innerHTML = `
-            <td>${index+1}</td>
+            <td class="row-number">${index+1}</td>
             <td><input type="date" class="table-input" id="editDate" value="${e.date}"></td>
             <td><input type="time" class="table-input" id="editTimeIn" value="${e.timeIn}"></td>
             <td><input type="time" class="table-input" id="editTimeOut" value="${e.timeOut}"></td>
@@ -451,8 +456,8 @@ class OJTCalculator {
             <td id="editGross">${this.calcHoursQ(e.timeIn, e.timeOut, 0)}</td>
             <td id="editNet">${e.hours}</td>
             <td class="pending-actions">
-                <button class="save-btn" onclick="window.calculator.saveEditRow(${index})"><i class="bi bi-check-lg"></i></button>
-                <button class="cancel-btn" onclick="window.calculator.render()"><i class="bi bi-x-lg"></i></button>
+                <button class="save-btn" onclick="window.safeCall('saveEditRow', ${index})"><i class="bi bi-check-lg"></i></button>
+                <button class="cancel-btn" onclick="window.safeCall('render')"><i class="bi bi-x-lg"></i></button>
             </td>`;
         const upd = () => {
             const tin = document.getElementById('editTimeIn').value;
@@ -494,19 +499,21 @@ class OJTCalculator {
         tbody.innerHTML = '';
         if (!this.entries.length) { tbody.innerHTML = '<tr class="empty-row"><td colspan="8"><i class="bi bi-inbox"></i> No entries yet.</td></tr>'; return; }
         this.entries.forEach((e, i) => {
-            const row = document.createElement('tr'); row.dataset.index = i;
+            const row = document.createElement('tr'); 
+            row.dataset.index = i;
+            row.setAttribute('data-row-number', i + 1); // Store the display number explicitly
             const brk = Number(e.breakMins) || 0;
             let bLbl = '—';
             if (brk > 0) { const h = Math.floor(brk/60), m = brk%60; bLbl = h>0&&m>0?`${h}h ${m}m`:h>0?`${h}h`:`${m}m`; }
             const gross = this.calcHoursQ(e.timeIn, e.timeOut, 0) || parseFloat((e.hours + brk/60).toFixed(2));
             row.innerHTML = `
-                <td style="color:var(--text-3);font-size:12px">${i+1}</td>
+                <td style="color:var(--text-3);font-size:12px" class="row-number">${i+1}</td>
                 <td><strong>${this.formatDate(e.date)}</strong></td>
                 <td>${this.to12h(e.timeIn)}</td><td>${this.to12h(e.timeOut)}</td>
                 <td>${bLbl}</td><td>${gross}</td><td><strong>${e.hours}</strong></td>
                 <td class="row-actions">
-                    <button class="edit-btn" onclick="window.calculator.editRow(${i})">Edit</button>
-                    <button class="delete-btn" onclick="window.calculator.deleteEntry(${i})">Delete</button>
+                    <button class="edit-btn" onclick="window.safeCall('editRow', ${i})">Edit</button>
+                    <button class="delete-btn" onclick="window.safeCall('deleteEntry', ${i})">Delete</button>
                 </td>`;
             tbody.appendChild(row);
         });

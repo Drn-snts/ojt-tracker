@@ -1,0 +1,28 @@
+<!-- ── TIME ENTRIES ── -->
+<section id="section-entries" class="content-section">
+    <div class="card">
+        <div class="card-header-row">
+            <h2 class="card-title">All Time Entries</h2>
+            <div class="table-actions">
+                <button type="button" id="duplicateBtn" class="btn btn-sm btn-outline">
+                    <i class="bi bi-copy"></i> Duplicate Last
+                </button>
+                <span class="total-badge">Total: <strong id="totalHours">0.00</strong> hrs</span>
+            </div>
+        </div>
+        <div class="table-wrapper">
+            <table class="entries-table" id="hoursTable">
+                <thead>
+                    <tr><th>#</th><th>Date</th><th>Time In</th><th>Time Out</th><th>Break</th><th>Total Hrs</th><th>Net Hrs</th><th>Action</th></tr>
+                </thead>
+                <tbody id="tableBody">
+                    <tr class="empty-row"><td colspan="8"><i class="bi bi-inbox"></i> No entries yet.</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div class="actions-bar">
+        <button id="exportBtn" class="btn btn-primary"><i class="bi bi-file-earmark-excel"></i> Export to Excel</button>
+        <button id="clearBtn" class="btn btn-danger"><i class="bi bi-trash3"></i> Clear All</button>
+    </div>
+</section>
