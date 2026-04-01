@@ -214,6 +214,7 @@ class OJTCalculator {
         this.setupWeekendToggle();
         this.populateProfileForm();
         this.initEntryFilter(); // Initialize filter to current month
+        this.initExportPreview(); // Initialize export preview on load
         this.render();
         this.renderWeeklyReportsList();
         this.renderHolidays();
@@ -289,6 +290,11 @@ class OJTCalculator {
             });
         }
         if (endDateEl) endDateEl.addEventListener('change', () => this.updateWeeklyDateRange());
+        // Export preview listener
+        const exportMonthEl = document.getElementById('exportMonth');
+        if (exportMonthEl) exportMonthEl.addEventListener('change', (e) => {
+            if (e.target.value) this.generateExportPreview(e.target.value);
+        });
     }
 
     // ---- Weekend Toggle ----
@@ -486,6 +492,17 @@ class OJTCalculator {
         this.applyFilter();
     }
 
+    initExportPreview() {
+        // Set export preview to current month on page load
+        const today = new Date();
+        const yearMonth = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
+        const exportMonthEl = document.getElementById('exportMonth');
+        if (exportMonthEl && !exportMonthEl.value) {
+            exportMonthEl.value = yearMonth;
+            this.generateExportPreview(yearMonth);
+        }
+    }
+
     applyFilter() {
         const filterStartEl = document.getElementById('filterStartDate');
         const filterEndEl = document.getElementById('filterEndDate');
@@ -600,10 +617,15 @@ class OJTCalculator {
 
     renderTable() {
         const tbody = document.getElementById('tableBody');
-        if (!tbody) return; // Element doesn't exist yet (landing page still showing)
+        if (!tbody) return;
         tbody.innerHTML = '';
-        const entriesToRender = this._filteredEntries.length > 0 ? this._filteredEntries : this.entries;
-        if (!entriesToRender.length) { tbody.innerHTML = '<tr class="empty-row"><td colspan="8"><i class="bi bi-inbox"></i> No entries in this period.</td></tr>'; return; }
+        const isFiltered = this._filterStartDate && this._filterEndDate;
+        const entriesToRender = isFiltered ? this._filteredEntries : this.entries;
+        if (!entriesToRender.length) { 
+            const emptyMsg = isFiltered ? 'No entries match your filter.' : 'No entries yet.';
+            tbody.innerHTML = `<tr class="empty-row"><td colspan="8"><i class="bi bi-inbox"></i> ${emptyMsg}</td></tr>`; 
+            return; 
+        }
         entriesToRender.forEach((e, displayIndex) => {
             const actualIndex = this.entries.indexOf(e);
             const i = actualIndex >= 0 ? actualIndex : displayIndex;
@@ -722,20 +744,6 @@ class OJTCalculator {
     async exportToExcel() {
         // Navigate to export section
         window.showSection('export');
-        
-        // Set current month as default
-        const today = new Date();
-        const yearMonth = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
-        document.getElementById('exportMonth').value = yearMonth;
-        
-        // Generate initial preview
-        this.generateExportPreview(yearMonth);
-        
-        // Update preview when month changes
-        const monthInput = document.getElementById('exportMonth');
-        monthInput.onchange = (e) => {
-            this.generateExportPreview(e.target.value);
-        };
     }
 
     generateExportPreview(yearMonth) {
