@@ -407,6 +407,11 @@ class OJTCalculator {
         this.setupDatePicker();
         await this.saveToFirestore();
         this.render();
+        // Refresh export preview if visible
+        const exportMonthEl = document.getElementById('exportMonth');
+        if (exportMonthEl && exportMonthEl.value) {
+            this.generateExportPreview(exportMonthEl.value);
+        }
     }
 
     duplicateEntry() {
@@ -470,6 +475,11 @@ class OJTCalculator {
         if (!confirm('Delete this entry?')) return;
         this.entries.splice(index, 1);
         await this.saveToFirestore(); this.render(); this.notify('Entry deleted!', 'success');
+        // Refresh export preview if visible
+        const exportMonthEl = document.getElementById('exportMonth');
+        if (exportMonthEl && exportMonthEl.value) {
+            this.generateExportPreview(exportMonthEl.value);
+        }
     }
 
     // ====================================================================
@@ -490,17 +500,6 @@ class OJTCalculator {
         if (filterEndEl) filterEndEl.value = this._filterEndDate;
         
         this.applyFilter();
-    }
-
-    initExportPreview() {
-        // Set export preview to current month on page load
-        const today = new Date();
-        const yearMonth = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
-        const exportMonthEl = document.getElementById('exportMonth');
-        if (exportMonthEl && !exportMonthEl.value) {
-            exportMonthEl.value = yearMonth;
-            this.generateExportPreview(yearMonth);
-        }
     }
 
     applyFilter() {
@@ -530,17 +529,19 @@ class OJTCalculator {
     }
 
     clearFilter() {
-        const today = new Date();
-        const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
-        const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-        
         const filterStartEl = document.getElementById('filterStartDate');
         const filterEndEl = document.getElementById('filterEndDate');
         
-        if (filterStartEl) filterStartEl.value = this.dateToInputStr(firstDay);
-        if (filterEndEl) filterEndEl.value = this.dateToInputStr(lastDay);
+        // Clear the filter inputs
+        if (filterStartEl) filterStartEl.value = '';
+        if (filterEndEl) filterEndEl.value = '';
         
-        this.applyFilter();
+        // Clear filter dates and show all data
+        this._filterStartDate = null;
+        this._filterEndDate = null;
+        this._filteredEntries = [...this.entries];
+        this.updateFilterInfo();
+        this.render();
     }
 
     updateFilterInfo() {
@@ -554,6 +555,17 @@ class OJTCalculator {
             filterInfo.textContent = `Showing all ${totalCount} entries`;
         } else {
             filterInfo.textContent = `Showing ${filteredCount} of ${totalCount} entries`;
+        }
+    }
+
+    initExportPreview() {
+        // Set export preview to current month on page load
+        const today = new Date();
+        const yearMonth = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
+        const exportMonthEl = document.getElementById('exportMonth');
+        if (exportMonthEl && !exportMonthEl.value) {
+            exportMonthEl.value = yearMonth;
+            this.generateExportPreview(yearMonth);
         }
     }
 
@@ -617,15 +629,11 @@ class OJTCalculator {
 
     renderTable() {
         const tbody = document.getElementById('tableBody');
-        if (!tbody) return;
+        if (!tbody) return; // Element doesn't exist yet (landing page still showing)
         tbody.innerHTML = '';
         const isFiltered = this._filterStartDate && this._filterEndDate;
         const entriesToRender = isFiltered ? this._filteredEntries : this.entries;
-        if (!entriesToRender.length) { 
-            const emptyMsg = isFiltered ? 'No entries match your filter.' : 'No entries yet.';
-            tbody.innerHTML = `<tr class="empty-row"><td colspan="8"><i class="bi bi-inbox"></i> ${emptyMsg}</td></tr>`; 
-            return; 
-        }
+        if (!entriesToRender.length) { tbody.innerHTML = '<tr class="empty-row"><td colspan="8"><i class="bi bi-inbox"></i> No entries in this period.</td></tr>'; return; }
         entriesToRender.forEach((e, displayIndex) => {
             const actualIndex = this.entries.indexOf(e);
             const i = actualIndex >= 0 ? actualIndex : displayIndex;
@@ -744,6 +752,20 @@ class OJTCalculator {
     async exportToExcel() {
         // Navigate to export section
         window.showSection('export');
+        
+        // Set current month as default
+        const today = new Date();
+        const yearMonth = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
+        document.getElementById('exportMonth').value = yearMonth;
+        
+        // Generate initial preview
+        this.generateExportPreview(yearMonth);
+        
+        // Update preview when month changes
+        const monthInput = document.getElementById('exportMonth');
+        monthInput.onchange = (e) => {
+            this.generateExportPreview(e.target.value);
+        };
     }
 
     generateExportPreview(yearMonth) {
