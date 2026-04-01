@@ -407,11 +407,6 @@ class OJTCalculator {
         this.setupDatePicker();
         await this.saveToFirestore();
         this.render();
-        // Refresh export preview if visible
-        const exportMonthEl = document.getElementById('exportMonth');
-        if (exportMonthEl && exportMonthEl.value) {
-            this.generateExportPreview(exportMonthEl.value);
-        }
     }
 
     duplicateEntry() {
@@ -475,11 +470,6 @@ class OJTCalculator {
         if (!confirm('Delete this entry?')) return;
         this.entries.splice(index, 1);
         await this.saveToFirestore(); this.render(); this.notify('Entry deleted!', 'success');
-        // Refresh export preview if visible
-        const exportMonthEl = document.getElementById('exportMonth');
-        if (exportMonthEl && exportMonthEl.value) {
-            this.generateExportPreview(exportMonthEl.value);
-        }
     }
 
     // ====================================================================
@@ -500,6 +490,17 @@ class OJTCalculator {
         if (filterEndEl) filterEndEl.value = this._filterEndDate;
         
         this.applyFilter();
+    }
+
+    initExportPreview() {
+        // Set export preview to current month on page load
+        const today = new Date();
+        const yearMonth = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
+        const exportMonthEl = document.getElementById('exportMonth');
+        if (exportMonthEl && !exportMonthEl.value) {
+            exportMonthEl.value = yearMonth;
+            this.generateExportPreview(yearMonth);
+        }
     }
 
     applyFilter() {
@@ -532,16 +533,11 @@ class OJTCalculator {
         const filterStartEl = document.getElementById('filterStartDate');
         const filterEndEl = document.getElementById('filterEndDate');
         
-        // Clear the filter inputs
+        // Clear to show all data across all dates
         if (filterStartEl) filterStartEl.value = '';
         if (filterEndEl) filterEndEl.value = '';
         
-        // Clear filter dates and show all data
-        this._filterStartDate = null;
-        this._filterEndDate = null;
-        this._filteredEntries = [...this.entries];
-        this.updateFilterInfo();
-        this.render();
+        this.applyFilter();
     }
 
     updateFilterInfo() {
@@ -555,17 +551,6 @@ class OJTCalculator {
             filterInfo.textContent = `Showing all ${totalCount} entries`;
         } else {
             filterInfo.textContent = `Showing ${filteredCount} of ${totalCount} entries`;
-        }
-    }
-
-    initExportPreview() {
-        // Set export preview to current month on page load
-        const today = new Date();
-        const yearMonth = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
-        const exportMonthEl = document.getElementById('exportMonth');
-        if (exportMonthEl && !exportMonthEl.value) {
-            exportMonthEl.value = yearMonth;
-            this.generateExportPreview(yearMonth);
         }
     }
 
@@ -629,11 +614,15 @@ class OJTCalculator {
 
     renderTable() {
         const tbody = document.getElementById('tableBody');
-        if (!tbody) return; // Element doesn't exist yet (landing page still showing)
+        if (!tbody) return;
         tbody.innerHTML = '';
         const isFiltered = this._filterStartDate && this._filterEndDate;
         const entriesToRender = isFiltered ? this._filteredEntries : this.entries;
-        if (!entriesToRender.length) { tbody.innerHTML = '<tr class="empty-row"><td colspan="8"><i class="bi bi-inbox"></i> No entries in this period.</td></tr>'; return; }
+        if (!entriesToRender.length) { 
+            const emptyMsg = isFiltered ? 'No entries match your filter.' : 'No entries yet.';
+            tbody.innerHTML = `<tr class="empty-row"><td colspan="8"><i class="bi bi-inbox"></i> ${emptyMsg}</td></tr>`; 
+            return; 
+        }
         entriesToRender.forEach((e, displayIndex) => {
             const actualIndex = this.entries.indexOf(e);
             const i = actualIndex >= 0 ? actualIndex : displayIndex;
@@ -752,20 +741,6 @@ class OJTCalculator {
     async exportToExcel() {
         // Navigate to export section
         window.showSection('export');
-        
-        // Set current month as default
-        const today = new Date();
-        const yearMonth = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
-        document.getElementById('exportMonth').value = yearMonth;
-        
-        // Generate initial preview
-        this.generateExportPreview(yearMonth);
-        
-        // Update preview when month changes
-        const monthInput = document.getElementById('exportMonth');
-        monthInput.onchange = (e) => {
-            this.generateExportPreview(e.target.value);
-        };
     }
 
     generateExportPreview(yearMonth) {
@@ -785,55 +760,55 @@ class OJTCalculator {
         }
         
         const monthName = new Date(parseInt(year), parseInt(month) - 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
-        const totalHours = filteredEntries.reduce((sum, e) => sum + e.hours, 0).toFixed(2);
+        const totalHoursDec = filteredEntries.reduce((sum, e) => sum + e.hours, 0);
+        const totalHoursFormatted = (() => {
+            const h = Math.floor(totalHoursDec);
+            const m = Math.round((totalHoursDec - h) * 60);
+            return `${h}:${m.toString().padStart(2, '0')}`;
+        })();
         
-        // Build preview matching PDF format exactly
-        let html = `
-        <!-- Title -->
-        <div style="background: #1f3864; color: white; padding: 16px; margin: -16px -16px 8px -16px; text-align: center; border-radius: 8px 8px 0 0;">
-            <div style="font-size: 22px; font-weight: 700; letter-spacing: 0.5px;">DAILY TIME REPORT</div>
-            <div style="font-size: 13px; margin-top: 6px; opacity: 0.95;">On-the-Job Training</div>
+        // Build preview matching Excel format exactly
+        let html = `<div style="border: 12px solid #1f3864; padding: 0; background: white; font-family: Arial, sans-serif; font-size: 11px;">
+        
+        <!-- Title Section -->
+        <div style="background: #1f3864; color: white; padding: 12px; text-align: center;">
+            <div style="font-size: 18px; font-weight: 700;">DAILY TIME REPORT</div>
+            <div style="font-size: 10px; margin-top: 2px;">On-the-Job Training</div>
         </div>
         
-        <!-- Profile Section - 2 Column Layout -->
-        <table style="width: 100%; border-collapse: collapse; margin-bottom: 16px; font-size: 10px;">
+        <!-- Profile Section -->
+        <table style="width: 100%; border-collapse: collapse; font-size: 10px;">
             <tbody>
                 <tr>
-                    <td style="background: #deeaf1; padding: 8px 12px; border: 1px solid #d0d8e0; font-weight: 600; width: 35%;">Name:</td>
-                    <td style="background: #deeaf1; padding: 8px 12px; border: 1px solid #d0d8e0; width: 40%;">${this.profileData.name || ''}</td>
-                    <td style="background: #deeaf1; padding: 8px 12px; border: 1px solid #d0d8e0; font-weight: 600; width: 25%; text-align: right;">Required OJT Hours:</td>
-                    <td style="background: #deeaf1; padding: 8px 12px; border: 1px solid #d0d8e0; text-align: center; font-weight: 600;">${this.hoursNeeded}</td>
+                    <td style="background: #deeaf1; padding: 8px 6px; border: 1px solid #b4c6e7; font-weight: 600; width: 20%;">Name:</td>
+                    <td style="background: white; padding: 8px 6px; border: 1px solid #b4c6e7; width: 30%;">${this.profileData.name || ''}</td>
+                    <td style="background: #deeaf1; padding: 8px 6px; border: 1px solid #b4c6e7; font-weight: 600; width: 30%;">Required OJT Hours:</td>
+                    <td style="background: white; padding: 8px 6px; border: 1px solid #b4c6e7; text-align: center; font-weight: 600; width: 20%;">${this.hoursNeeded}</td>
                 </tr>
                 <tr>
-                    <td style="background: #deeaf1; padding: 8px 12px; border: 1px solid #d0d8e0; font-weight: 600;">School / University:</td>
-                    <td style="background: #deeaf1; padding: 8px 12px; border: 1px solid #d0d8e0; font-size: 10px;">${this.profileData.school || ''}</td>
-                    <td style="background: #deeaf1; padding: 8px 12px; border: 1px solid #d0d8e0; font-weight: 600; text-align: right;">Total Hours Rendered:</td>
-                    <td style="background: #deeaf1; padding: 8px 12px; border: 1px solid #d0d8e0; text-align: center; font-weight: 600;">${totalHours}</td>
+                    <td style="background: #deeaf1; padding: 8px 6px; border: 1px solid #b4c6e7; font-weight: 600;">School / University:</td>
+                    <td style="background: white; padding: 8px 6px; border: 1px solid #b4c6e7;">${this.profileData.school || ''}</td>
+                    <td style="background: #deeaf1; padding: 8px 6px; border: 1px solid #b4c6e7; font-weight: 600;">Total Hours Rendered:</td>
+                    <td style="background: white; padding: 8px 6px; border: 1px solid #b4c6e7; text-align: center; font-weight: 600;">${totalHoursFormatted}</td>
                 </tr>
                 <tr>
-                    <td style="background: #deeaf1; padding: 8px 12px; border: 1px solid #d0d8e0; font-weight: 600;">Company / Department:</td>
-                    <td style="background: #deeaf1; padding: 8px 12px; border: 1px solid #d0d8e0;">${this.profileData.company || ''}</td>
-                    <td style="background: #deeaf1; padding: 8px 12px; border: 1px solid #d0d8e0;"></td>
-                    <td style="background: #deeaf1; padding: 8px 12px; border: 1px solid #d0d8e0;"></td>
-                </tr>
-                <tr>
-                    <td style="background: #deeaf1; padding: 8px 12px; border: 1px solid #d0d8e0; font-weight: 600;">Period Covered:</td>
-                    <td style="background: #deeaf1; padding: 8px 12px; border: 1px solid #d0d8e0;">Month of ${monthName}</td>
-                    <td style="background: #deeaf1; padding: 8px 12px; border: 1px solid #d0d8e0;"></td>
-                    <td style="background: #deeaf1; padding: 8px 12px; border: 1px solid #d0d8e0;"></td>
+                    <td style="background: #deeaf1; padding: 8px 6px; border: 1px solid #b4c6e7; font-weight: 600;">Company / Department:</td>
+                    <td style="background: white; padding: 8px 6px; border: 1px solid #b4c6e7;">${this.profileData.company || ''}</td>
+                    <td style="background: #deeaf1; padding: 8px 6px; border: 1px solid #b4c6e7; font-weight: 600;">Period Covered:</td>
+                    <td style="background: white; padding: 8px 6px; border: 1px solid #b4c6e7;">Month of ${monthName}</td>
                 </tr>
             </tbody>
         </table>
         
         <!-- Data Table -->
-        <table style="width: 100%; border-collapse: collapse; font-size: 10px; margin-bottom: 8px;">
+        <table style="width: 100%; border-collapse: collapse; font-size: 10px;">
             <thead>
                 <tr style="background: #1f3864; color: white;">
-                    <th style="padding: 10px 6px; text-align: center; font-weight: 600; border: 1px solid #1f3864;">No.</th>
-                    <th style="padding: 10px 8px; text-align: center; font-weight: 600; border: 1px solid #1f3864;">Date</th>
-                    <th style="padding: 10px 8px; text-align: center; font-weight: 600; border: 1px solid #1f3864;">Time In</th>
-                    <th style="padding: 10px 8px; text-align: center; font-weight: 600; border: 1px solid #1f3864;">Time Out</th>
-                    <th style="padding: 10px 8px; text-align: center; font-weight: 600; border: 1px solid #1f3864;">Hours Rendered</th>
+                    <th style="padding: 8px 6px; text-align: center; font-weight: 600; border: 1px solid #b4c6e7; width: 8%;">No.</th>
+                    <th style="padding: 8px 6px; text-align: center; font-weight: 600; border: 1px solid #b4c6e7; width: 32%;">Date</th>
+                    <th style="padding: 8px 6px; text-align: center; font-weight: 600; border: 1px solid #b4c6e7; width: 18%;">Time In</th>
+                    <th style="padding: 8px 6px; text-align: center; font-weight: 600; border: 1px solid #b4c6e7; width: 18%;">Time Out</th>
+                    <th style="padding: 8px 6px; text-align: center; font-weight: 600; border: 1px solid #b4c6e7; width: 18%;">Hours Rendered</th>
                 </tr>
             </thead>
             <tbody>`;
@@ -841,43 +816,74 @@ class OJTCalculator {
         // Add entries
         filteredEntries.forEach((e, idx) => {
             const dateObj = new Date(e.date + 'T00:00:00');
-            const dateStr = `${String(dateObj.getMonth() + 1).padStart(2, '0')}/${String(dateObj.getDate()).padStart(2, '0')}, ${dateObj.getFullYear()} (${['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][dateObj.getDay()]})`;
+            const dtOpts = { month: 'short', day: 'numeric', year: 'numeric' };
+            const dayOpts = { weekday: 'short' };
+            const dtStr = dateObj.toLocaleDateString('en-US', dtOpts);
+            const dayStr = dateObj.toLocaleDateString('en-US', dayOpts);
+            const dateStr = `${dtStr} (${dayStr})`;
             const bgColor = idx % 2 === 0 ? '#ffffff' : '#bdd7ee';
             
             html += `<tr style="background: ${bgColor};">
-                <td style="padding: 8px 6px; text-align: center; border: 1px solid #d0d8e0;">${idx + 1}</td>
-                <td style="padding: 8px 8px; text-align: center; border: 1px solid #d0d8e0;">${dateStr}</td>
-                <td style="padding: 8px 8px; text-align: center; border: 1px solid #d0d8e0;">${this.to12h(e.timeIn)}</td>
-                <td style="padding: 8px 8px; text-align: center; border: 1px solid #d0d8e0;">${this.to12h(e.timeOut)}</td>
-                <td style="padding: 8px 8px; text-align: center; border: 1px solid #d0d8e0; font-weight: 600;">${e.hours}</td>
+                <td style="padding: 6px 4px; text-align: center; border: 1px solid #b4c6e7;">${idx + 1}</td>
+                <td style="padding: 6px 4px; text-align: left; border: 1px solid #b4c6e7;">${dateStr}</td>
+                <td style="padding: 6px 4px; text-align: center; border: 1px solid #b4c6e7;">${this.to12h(e.timeIn)}</td>
+                <td style="padding: 6px 4px; text-align: center; border: 1px solid #b4c6e7;">${this.to12h(e.timeOut)}</td>
+                <td style="padding: 6px 4px; text-align: center; border: 1px solid #b4c6e7;">${(() => { const h = Math.floor(e.hours); const m = Math.round((e.hours - h) * 60); return `${h}:${m.toString().padStart(2, '0')}`; })()}</td>
             </tr>`;
         });
         
-        // Add empty rows to show the structure (up to 10 rows visible in preview)
-        const emptyRowsNeeded = Math.min(10, 25 - filteredEntries.length);
-        for (let i = 0; i < emptyRowsNeeded; i++) {
-            const rowNum = filteredEntries.length + i + 1;
+        // Add empty rows to fill up to 25 rows
+        for (let i = filteredEntries.length; i < 25; i++) {
+            const rowNum = i + 1;
             const bgColor = rowNum % 2 === 0 ? '#ffffff' : '#bdd7ee';
             html += `<tr style="background: ${bgColor};">
-                <td style="padding: 8px 6px; text-align: center; border: 1px solid #d0d8e0;">${rowNum}</td>
-                <td style="padding: 8px 8px; border: 1px solid #d0d8e0;"></td>
-                <td style="padding: 8px 8px; border: 1px solid #d0d8e0;"></td>
-                <td style="padding: 8px 8px; border: 1px solid #d0d8e0;"></td>
-                <td style="padding: 8px 8px; border: 1px solid #d0d8e0;"></td>
+                <td style="padding: 6px 4px; text-align: center; border: 1px solid #b4c6e7;">${rowNum}</td>
+                <td style="padding: 6px 4px; border: 1px solid #b4c6e7;"></td>
+                <td style="padding: 6px 4px; border: 1px solid #b4c6e7;"></td>
+                <td style="padding: 6px 4px; border: 1px solid #b4c6e7;"></td>
+                <td style="padding: 6px 4px; border: 1px solid #b4c6e7;"></td>
             </tr>`;
         }
         
         html += `</tbody></table>
         
         <!-- Footer Note -->
-        <div style="font-size: 10px; color: #666; margin-bottom: 8px; font-style: italic;">
-            * Hours rendered are computed net of 1-hour lunch break, capped at 8 hours/day.
+        <div style="font-size: 9px; color: #333; padding: 6px 8px; border: 1px solid #b4c6e7; border-top: none; font-style: italic;">
+            * Hours rendered are computed net of 1-hour lunch break, deduct if overage of 8 hours per day.
         </div>
         
         <!-- Total Row -->
-        <div style="background: #1f3864; color: white; display: grid; grid-template-columns: 1fr auto; gap: 0;">
-            <div style="padding: 12px 16px; text-align: right; font-weight: 600;">TOTAL HOURS RENDERED</div>
-            <div style="padding: 12px 16px; text-align: center; font-weight: 700; min-width: 100px; border-left: 1px solid rgba(255,255,255,0.2);">${totalHours}</div>
+        <table style="width: 100%; border-collapse: collapse;">
+            <tr style="background: #1f3864; color: white;">
+                <td style="padding: 10px 8px; text-align: left; font-weight: 600; border: 1px solid #b4c6e7; flex: 1;">TOTAL HOURS RENDERED</td>
+                <td style="padding: 10px 8px; text-align: center; font-weight: 600; width: 100px; border: 1px solid #b4c6e7;">${totalHoursFormatted}</td>
+            </tr>
+        </table>
+        
+        <!-- Certified Correct Section -->
+        <div style="padding: 12px 8px; border: 1px solid #b4c6e7; border-top: none; background: white;">
+            <div style="font-weight: 600; font-size: 10px; margin-bottom: 12px;">Certified Correct:</div>
+            
+            <!-- Supervisor name & signature area -->
+            <div style="margin-bottom: 12px;">
+                <div style="background: #bdd7ee; padding: 16px 8px 4px 8px; text-align: center; min-height: 40px; border: 1px solid #b4c6e7; display: flex; align-items: flex-end; justify-content: center;">
+                    <span style="font-size: 9px; font-weight: 600;">${this.profileData.supervisor || ''}</span>
+                </div>
+                <div style="text-align: center; font-size: 9px; padding: 4px 8px;">${this.profileData.supervisorRole || ''}</div>
+            </div>
+            
+            <!-- Role label -->
+            <div style="background: #bdd7ee; padding: 6px 8px; text-align: center; border: 1px solid #b4c6e7; margin-bottom: 12px;">
+                <div style="font-size: 9px; font-weight: 600; color: #1f3864;">OJT Supervisor / Immediate Head</div>
+            </div>
+            
+            <!-- Date Field -->
+            <div style="font-size: 9px;">
+                <span style="font-weight: 600;">Date:</span>
+                <span style="border-bottom: 1px solid #333; display: inline-block; width: 120px; margin-left: 16px;"></span>
+            </div>
+        </div>
+        
         </div>`;
         
         previewDiv.innerHTML = html;
