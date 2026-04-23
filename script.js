@@ -199,9 +199,10 @@ class OJTCalculator {
         this._dayRowCount = 0;
         this._weeklyStartDate = null;
         this._weeklyEndDate = null;
-        this._filterStartDate = null;
-        this._filterEndDate = null;
+        this._filterMonth = null;
         this._filteredEntries = [];
+        this._currentPage = 1;
+        this._pageSize = 10;
     }
 
     // ====================================================================
@@ -270,12 +271,17 @@ class OJTCalculator {
         document.getElementById('addDayRowBtn').addEventListener('click', () => this.addDayRow());
         document.getElementById('timeOut').addEventListener('keypress', e => { if (e.key === 'Enter') this.addEntry(); });
         // Time entries filter listeners
-        const filterStartEl = document.getElementById('filterStartDate');
-        const filterEndEl = document.getElementById('filterEndDate');
+        const filterMonthEl = document.getElementById('filterMonth');
+        const sortEl = document.getElementById('sortOrder');
         const clearFilterBtn = document.getElementById('clearFilterBtn');
-        if (filterStartEl) filterStartEl.addEventListener('change', () => this.applyFilter());
-        if (filterEndEl) filterEndEl.addEventListener('change', () => this.applyFilter());
+        if (filterMonthEl) filterMonthEl.addEventListener('change', () => this.applyFilter());
+        if (sortEl) sortEl.addEventListener('change', () => this.applyFilter());
         if (clearFilterBtn) clearFilterBtn.addEventListener('click', () => this.clearFilter());
+        // Pagination listeners
+        const prevPageBtn = document.getElementById('prevPageBtn');
+        const nextPageBtn = document.getElementById('nextPageBtn');
+        if (prevPageBtn) prevPageBtn.addEventListener('click', () => this.previousPage());
+        if (nextPageBtn) nextPageBtn.addEventListener('click', () => this.nextPage());
         // Weekly report date range listeners
         const startDateEl = document.getElementById('wkStartDate');
         const endDateEl = document.getElementById('wkEndDate');
@@ -417,6 +423,16 @@ class OJTCalculator {
         const tbody = document.getElementById('tableBody');
         if (!tbody) { this.notify('Table not ready yet!', 'error'); return; }
         tbody.querySelector('.empty-row')?.remove();
+        
+        // Check if the new entry matches the active filter
+        const isFiltered = this._filterMonth;
+        let matchesFilter = true;
+        if (isFiltered) {
+            const [filterYear, filterMonth] = this._filterMonth.split('-');
+            const newDate = new Date(nextDate + 'T00:00:00');
+            matchesFilter = newDate.getFullYear() == filterYear && newDate.getMonth() == filterMonth - 1;
+        }
+        
         const row = document.createElement('tr');
         row.id = 'pendingRow'; row.classList.add('pending-row');
         row.innerHTML = `
@@ -431,7 +447,16 @@ class OJTCalculator {
                 <button class="save-btn" onclick="window.calculator.savePendingRow()"><i class="bi bi-check-lg"></i></button>
                 <button class="cancel-btn" onclick="window.calculator.cancelPendingRow()"><i class="bi bi-x-lg"></i></button>
             </td>`;
-        tbody.appendChild(row);
+        
+        // Position the pending row
+        if (!matchesFilter) {
+            // Entry doesn't match filter - show at top
+            tbody.insertBefore(row, tbody.firstChild);
+        } else {
+            // Entry matches filter - append to end (will be in sort position after save)
+            tbody.appendChild(row);
+        }
+        
         const upd = () => {
             const tin = document.getElementById('pendingTimeIn').value;
             const tout = document.getElementById('pendingTimeOut').value;
@@ -458,7 +483,7 @@ class OJTCalculator {
         if (idx !== -1) this.entries[idx] = { date, timeIn: tin, timeOut: tout, breakMins: brk, hours };
         else this.entries.push({ date, timeIn: tin, timeOut: tout, breakMins: brk, hours });
         this.entries.sort((a, b) => new Date(a.date) - new Date(b.date));
-        await this.saveToFirestore(); this.render(); this.notify('Entry saved!', 'success');
+        await this.saveToFirestore(); this.applyFilter(); this.goToEntryPage(date); this.notify('Entry saved!', 'success');
     }
 
     cancelPendingRow() {
@@ -468,8 +493,17 @@ class OJTCalculator {
 
     async deleteEntry(index) {
         if (!confirm('Delete this entry?')) return;
+        const currentPage = this._currentPage;  // Store current page
         this.entries.splice(index, 1);
-        await this.saveToFirestore(); this.render(); this.notify('Entry deleted!', 'success');
+        await this.saveToFirestore(); 
+        this.applyFilter(false);  // Don't reset page
+        // Verify page is still valid
+        const totalPages = Math.ceil(this._filteredEntries.length / this._pageSize);
+        if (this._currentPage > totalPages) {
+            this._currentPage = Math.max(1, totalPages);
+            this.renderTable();
+        }
+        this.notify('Entry deleted!', 'success');
     }
 
     // ====================================================================
@@ -478,16 +512,10 @@ class OJTCalculator {
     initEntryFilter() {
         // Set filter to current month on initialization
         const today = new Date();
-        const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
-        const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+        const yearMonth = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
         
-        this._filterStartDate = this.dateToInputStr(firstDay);
-        this._filterEndDate = this.dateToInputStr(lastDay);
-        
-        const filterStartEl = document.getElementById('filterStartDate');
-        const filterEndEl = document.getElementById('filterEndDate');
-        if (filterStartEl) filterStartEl.value = this._filterStartDate;
-        if (filterEndEl) filterEndEl.value = this._filterEndDate;
+        const filterMonthEl = document.getElementById('filterMonth');
+        if (filterMonthEl) filterMonthEl.value = yearMonth;
         
         this.applyFilter();
     }
@@ -503,40 +531,41 @@ class OJTCalculator {
         }
     }
 
-    applyFilter() {
-        const filterStartEl = document.getElementById('filterStartDate');
-        const filterEndEl = document.getElementById('filterEndDate');
+    applyFilter(resetPage = true) {
+        const filterMonthEl = document.getElementById('filterMonth');
+        const sortEl = document.getElementById('sortOrder');
         
-        if (!filterStartEl || !filterEndEl) return;
+        if (!filterMonthEl) return;
         
-        const startVal = filterStartEl.value;
-        const endVal = filterEndEl.value;
+        const monthVal = filterMonthEl.value;
+        this._filterMonth = monthVal;
         
-        if (!startVal || !endVal) {
+        if (!monthVal) {
             this._filteredEntries = [...this.entries];
         } else {
-            const start = new Date(startVal + 'T00:00:00');
-            const end = new Date(endVal + 'T23:59:59');
+            const [year, month] = monthVal.split('-');
             this._filteredEntries = this.entries.filter(e => {
                 const eDate = new Date(e.date + 'T00:00:00');
-                return eDate >= start && eDate <= end;
+                return eDate.getFullYear() == year && eDate.getMonth() == month - 1;
             });
         }
         
-        this._filterStartDate = startVal;
-        this._filterEndDate = endVal;
+        // Apply sorting
+        const sortOrder = sortEl?.value || 'asc';
+        this._filteredEntries.sort((a, b) => {
+            const dateA = new Date(a.date);
+            const dateB = new Date(b.date);
+            return sortOrder === 'asc' ? dateA - dateB : dateB - dateA;
+        });
+        
+        if (resetPage) this._currentPage = 1;  // Reset to first page only when user changes filter
         this.updateFilterInfo();
         this.render();
     }
 
     clearFilter() {
-        const filterStartEl = document.getElementById('filterStartDate');
-        const filterEndEl = document.getElementById('filterEndDate');
-        
-        // Clear to show all data across all dates
-        if (filterStartEl) filterStartEl.value = '';
-        if (filterEndEl) filterEndEl.value = '';
-        
+        const filterMonthEl = document.getElementById('filterMonth');
+        if (filterMonthEl) filterMonthEl.value = '';
         this.applyFilter();
     }
 
@@ -552,6 +581,62 @@ class OJTCalculator {
         } else {
             filterInfo.textContent = `Showing ${filteredCount} of ${totalCount} entries`;
         }
+    }
+
+    updatePaginationInfo(totalPages) {
+        const pageInfo = document.getElementById('pageInfo');
+        const prevBtn = document.getElementById('prevPageBtn');
+        const nextBtn = document.getElementById('nextPageBtn');
+        
+        if (pageInfo) pageInfo.textContent = `Page ${this._currentPage} of ${totalPages || 1}`;
+        if (prevBtn) prevBtn.disabled = this._currentPage <= 1;
+        if (nextBtn) nextBtn.disabled = this._currentPage >= totalPages;
+    }
+
+    nextPage() {
+        const totalPages = Math.ceil(this._filteredEntries.length / this._pageSize);
+        
+        if (this._currentPage < totalPages) {
+            this._currentPage++;
+            this.renderTable();
+        }
+    }
+
+    previousPage() {
+        if (this._currentPage > 1) {
+            this._currentPage--;
+            this.renderTable();
+        }
+    }
+
+    goToEntryPage(dateStr) {
+        // Find which page the entry should be on based on filter and sort
+        const entriesToRender = this._filteredEntries;
+        
+        // Check if entry exists in rendered list
+        const entryIndex = entriesToRender.findIndex(e => e.date === dateStr);
+        if (entryIndex === -1) {
+            // Entry not in filtered list, stay on current page
+            return;
+        }
+        
+        // Calculate which page it's on
+        const pageNum = Math.floor(entryIndex / this._pageSize) + 1;
+        this._currentPage = pageNum;
+        
+        // Re-render to show the entry on the correct page
+        this.renderTable();
+        
+        setTimeout(() => {
+            // Scroll to the entry after render
+            const tbody = document.getElementById('tableBody');
+            if (tbody) {
+                const rows = tbody.querySelectorAll('tr');
+                if (rows.length > 0) {
+                    rows[Math.min(entryIndex % this._pageSize, rows.length - 1)].scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            }
+        }, 0);
     }
 
     // Dashboard Table & Recent Entries Rendering
@@ -601,7 +686,7 @@ class OJTCalculator {
         const hours = this.calcHours(tin, tout, brk); if (!hours) return;
         this.entries[index] = { date, timeIn: tin, timeOut: tout, breakMins: brk, hours };
         this.entries.sort((a, b) => new Date(a.date) - new Date(b.date));
-        await this.saveToFirestore(); this.render(); this.notify('Entry updated!', 'success');
+        await this.saveToFirestore(); this.applyFilter(false); this.goToEntryPage(date); this.notify('Entry updated!', 'success');
     }
 
     // ====================================================================
@@ -616,25 +701,38 @@ class OJTCalculator {
         const tbody = document.getElementById('tableBody');
         if (!tbody) return;
         tbody.innerHTML = '';
-        const isFiltered = this._filterStartDate && this._filterEndDate;
-        const entriesToRender = isFiltered ? this._filteredEntries : this.entries;
+        const isFiltered = this._filterMonth;
+        // Always use _filteredEntries which has sorting applied
+        const entriesToRender = this._filteredEntries;
+        
         if (!entriesToRender.length) { 
             const emptyMsg = isFiltered ? 'No entries match your filter.' : 'No entries yet.';
             tbody.innerHTML = `<tr class="empty-row"><td colspan="8"><i class="bi bi-inbox"></i> ${emptyMsg}</td></tr>`; 
+            this.updatePaginationInfo(0);
             return; 
         }
-        entriesToRender.forEach((e, displayIndex) => {
+        
+        // Calculate pagination
+        const totalPages = Math.ceil(entriesToRender.length / this._pageSize);
+        if (this._currentPage > totalPages) this._currentPage = Math.max(1, totalPages);
+        
+        const startIdx = (this._currentPage - 1) * this._pageSize;
+        const endIdx = startIdx + this._pageSize;
+        const pageEntries = entriesToRender.slice(startIdx, endIdx);
+        
+        pageEntries.forEach((e, displayIndex) => {
+            const actualPageIndex = startIdx + displayIndex;
             const actualIndex = this.entries.indexOf(e);
-            const i = actualIndex >= 0 ? actualIndex : displayIndex;
+            const i = actualIndex >= 0 ? actualIndex : actualPageIndex;
             const row = document.createElement('tr'); 
             row.dataset.index = i;
-            row.setAttribute('data-row-number', displayIndex + 1); // Store the display number for filtered view
+            row.setAttribute('data-row-number', actualPageIndex + 1);
             const brk = Number(e.breakMins) || 0;
             let bLbl = '—';
             if (brk > 0) { const h = Math.floor(brk/60), m = brk%60; bLbl = h>0&&m>0?`${h}h ${m}m`:h>0?`${h}h`:`${m}m`; }
             const gross = this.calcHoursQ(e.timeIn, e.timeOut, 0) || parseFloat((e.hours + brk/60).toFixed(2));
             row.innerHTML = `
-                <td style="color:var(--text-3);font-size:12px" class="row-number">${displayIndex+1}</td>
+                <td style="color:var(--text-3);font-size:12px" class="row-number">${actualPageIndex+1}</td>
                 <td><strong>${this.formatDate(e.date)}</strong></td>
                 <td>${this.to12h(e.timeIn)}</td><td>${this.to12h(e.timeOut)}</td>
                 <td>${bLbl}</td><td>${gross}</td><td><strong>${e.hours}</strong></td>
@@ -644,6 +742,8 @@ class OJTCalculator {
                 </td>`;
             tbody.appendChild(row);
         });
+        
+        this.updatePaginationInfo(totalPages);
     }
 
     renderRecent() {
@@ -662,7 +762,7 @@ class OJTCalculator {
     }
 
     updateStats() {
-        const total = this.totalHours(), rem = this.remainingHours(), days = this.remainingDays(), prog = this.progress();
+        const total = this.totalHours(), rem = this.remainingHours(), prog = this.progress();
         // Safely update elements only if they exist (app screen loaded)
         const setContent = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
         const setStyle = (id, prop, val) => { const el = document.getElementById(id); if (el) el.style[prop] = val; };
@@ -671,7 +771,6 @@ class OJTCalculator {
         setContent('totalHours', total);
         setContent('hoursRendered', total);
         setContent('remainingHours', rem);
-        setContent('remainingDays', days);
         setContent('entriesCount', this.entries.length);
         setStyle('progressFill', 'width', prog + '%');
         setContent('progressText', prog + '%');
@@ -683,6 +782,65 @@ class OJTCalculator {
         setContent('progressMsg', msgs[prog < 25 ? 0 : prog < 50 ? 1 : prog < 75 ? 2 : prog < 100 ? 3 : 4]);
         const fill = document.getElementById('progressFill');
         if (fill) fill.style.background = prog < 50 ? 'linear-gradient(90deg,#3b82f6,#6366f1)' : prog < 80 ? 'linear-gradient(90deg,#f59e0b,#ef4444)' : 'linear-gradient(90deg,#10b981,#059669)';
+        
+        // Update Est. End Date
+        const estEndDate = this.calculateEstEndDate();
+        const daysRem = this.calculateDaysRemaining();
+        setContent('estEndDate', estEndDate);
+        setContent('daysRemaining', daysRem);
+    }
+
+    isMonFriOnly() {
+        if (!this.entries.length) return false;
+        for (let e of this.entries) {
+            const date = new Date(e.date + 'T00:00:00');
+            const day = date.getDay();
+            if (day === 0 || day === 6) return false;  // Found weekend entry
+        }
+        return true;
+    }
+
+    calculateDaysRemaining() {
+        const remHours = parseFloat(this.remainingHours());
+        if (remHours === 0 || isNaN(remHours)) return 0;
+        
+        const dailyHours = 8;
+        const daysNeeded = Math.ceil(remHours / dailyHours);
+        return daysNeeded;
+    }
+
+    calculateEstEndDate() {
+        const remHours = parseFloat(this.remainingHours());
+        if (remHours === 0 || isNaN(remHours)) return 'Done!';
+        
+        const dailyHours = 8;
+        const daysNeeded = Math.ceil(remHours / dailyHours);
+        
+        let currentDate = new Date();
+        let daysAdded = 0;
+        
+        while (daysAdded < daysNeeded) {
+            currentDate.setDate(currentDate.getDate() + 1);
+            const day = currentDate.getDay();
+            const dateStr = this.dateToInputStr(currentDate);
+            
+            // Check if day should be counted
+            let isWorkday = true;
+            if (!this.includeWeekends && (day === 0 || day === 6)) {
+                isWorkday = false;  // Skip weekends if not including them
+            }
+            
+            // Check if it's a holiday or absence
+            const isHoliday = this.holidays.some(h => h.date === dateStr && h.type === 'holiday');
+            const isAbsence = this.holidays.some(h => h.date === dateStr && h.type === 'absence');
+            
+            if (isWorkday && !isHoliday && !isAbsence) {
+                daysAdded++;
+            }
+        }
+        
+        // Format as short date
+        return this.formatDateShort(this.dateToInputStr(currentDate));
     }
 
     async updateHoursNeeded() {
