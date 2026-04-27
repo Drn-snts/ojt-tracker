@@ -1082,23 +1082,26 @@ class OJTCalculator {
         // Define colors
         const colors = {
             navy: 'FF1F3864',
+            darkNavy: 'FF2E5090',
             profileBg: 'FFDEEAF1',
             lightBlueBg: 'FFBDD7EE',
             white: 'FFFFFFFF',
             darkGray: 'FF000000',
-            labelBlue: 'FF1F3864', // Dark blue for profile Labels
-            lightGray: 'FFA0A0A0', // For row numbers
+            labelBlue: 'FF1F3864',
+            lightGray: 'FFA0A0A0',
             profileBorder: 'FF1F3864',
             dataBorder: 'FFB4C6E7'
         };
         
-        // Set column widths
+        // Set column widths - 7 columns with borders
         worksheet.columns = [
-            { width: 8 },   // Column A: No.
-            { width: 26 },  // Column B: Date
-            { width: 14 },  // Column C: Time In
-            { width: 14 },  // Column D: Time Out
-            { width: 18 }   // Column E: Hours Rendered
+            { width: 4.22 },   // Column A: Left border
+            { width: 21.33 },  // Column B: No./Labels
+            { width: 17.22 },  // Column C: Data/Date
+            { width: 15.22 },  // Column D: Time In/School
+            { width: 20.33 },  // Column E: Time Out
+            { width: 17.22 },  // Column F: Hours/Values
+            { width: 4.22 }    // Column G: Right border
         ];
         
         // Style functions
@@ -1115,9 +1118,9 @@ class OJTCalculator {
         });
         
         const profileCellStyle = (isLabel = false) => ({
-            fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: isLabel ? colors.lightBlueBg : colors.white } },
+            fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: isLabel ? colors.profileBg : colors.white } },
             font: { name: 'Arial', size: 10, bold: isLabel, color: { argb: colors.labelBlue } },
-            alignment: { horizontal: 'left', vertical: 'center', wrapText: true },
+            alignment: { horizontal: isLabel ? 'right' : 'center', vertical: 'center', wrapText: true },
             border: {
                 top: { style: 'thin', color: { argb: colors.profileBorder } },
                 bottom: { style: 'thin', color: { argb: colors.profileBorder } },
@@ -1127,7 +1130,7 @@ class OJTCalculator {
         });
         
         const headerCellStyle = () => ({
-            fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: colors.navy } },
+            fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: colors.darkNavy } },
             font: { name: 'Arial', size: 10, bold: true, color: { argb: colors.white } },
             alignment: { horizontal: 'center', vertical: 'center' },
             border: {
@@ -1150,10 +1153,10 @@ class OJTCalculator {
             }
         });
         
-        const totalCellStyle = (rightAlign = false) => ({
-            fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: colors.white } },
-            font: { name: 'Arial', size: 10, bold: true, color: { argb: rightAlign ? colors.labelBlue : colors.darkGray } },
-            alignment: { horizontal: rightAlign ? 'right' : 'center', vertical: 'center' },
+        const totalCellStyle = (isTotal = false, isTotalValue = false) => ({
+            fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: isTotal ? colors.navy : colors.white } },
+            font: { name: 'Arial', size: 10, bold: true, color: { argb: isTotalValue ? colors.navy : (isTotal ? colors.white : colors.darkGray) } },
+            alignment: { horizontal: 'center', vertical: 'center' },
             border: {
                 top: { style: 'thin', color: { argb: colors.dataBorder } },
                 bottom: { style: 'thin', color: { argb: colors.dataBorder } },
@@ -1162,72 +1165,107 @@ class OJTCalculator {
             }
         });
         
-        // Row 1: Title
-        const row1 = worksheet.addRow(['DAILY TIME REPORT']);
-        row1.height = 28;
-        row1.getCell(1).style = titleCellStyle();
-        worksheet.mergeCells('A1:E1');
-        
-        // Row 2: Subtitle
-        const row2 = worksheet.addRow(['On-the-Job Training']);
-        row2.height = 20;
-        row2.getCell(1).style = subtitleCellStyle();
-        worksheet.mergeCells('A2:E2');
+        // Row 1: Empty
+        let row = worksheet.addRow(['', '', '', '', '', '', '']);
+        row.height = 7.5;
+        row.getCell(1).border = { left: { style: 'medium', color: { argb: colors.navy } } };
+        row = worksheet.addRow(['', '', '', '', '', '', '']);
+        row.height = 54;
+        row.getCell(2).value = 'DAILY TIME REPORT\nOn-the-Job Training';
+        row.getCell(2).alignment = { horizontal: 'center', vertical: 'center', wrapText: true };
+        row.getCell(2).font = { name: 'Arial', size: 16, bold: true, color: { argb: colors.white } };
+        row.getCell(2).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: colors.navy } };
+        row.getCell(1).border = { left: { style: 'medium', color: { argb: colors.navy } }, right: { style: 'medium', color: { argb: colors.navy } } };
+        row.getCell(7).border = { left: { style: 'medium', color: { argb: colors.navy } } };
+        worksheet.mergeCells('B2:F2');
         
         // Row 3: Empty
-        worksheet.addRow(['', '', '', '', '']).height = 12;
+        row = worksheet.addRow(['', '', '', '', '', '', '']);
+        row.height = 12;
+        row.getCell(1).border = { left: { style: 'medium', color: { argb: colors.navy } }, right: { style: 'medium', color: { argb: colors.navy } } };
+        row.getCell(7).border = { left: { style: 'medium', color: { argb: colors.navy } } };
         
-        // Row 4: Name
-        const row4 = worksheet.addRow(['Name:', this.profileData.name || '', '', 'Required OJT Hours:', this.hoursNeeded]);
-        row4.height = 20;
-        row4.getCell(1).style = profileCellStyle(true);
-        row4.getCell(2).style = profileCellStyle(false);
-        row4.getCell(3).style = { fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: colors.white } } }; // transparent middle
-        row4.getCell(4).style = profileCellStyle(true);
-        row4.getCell(5).style = profileCellStyle(false);
+        // Row 4: Name and Required OJT Hours
+        row = worksheet.addRow(['', 'Name:', this.profileData.name || '', '', 'Required OJT Hours:', this.hoursNeeded, '']);
+        row.height = 20;
+        row.getCell(1).border = { left: { style: 'medium', color: { argb: colors.navy } }, right: { style: 'medium', color: { argb: colors.navy } } };
+        row.getCell(2).style = profileCellStyle(true);
+        row.getCell(3).style = profileCellStyle(false);
+        row.getCell(3).alignment = { horizontal: 'left', vertical: 'center' };
+        row.getCell(5).style = profileCellStyle(true);
+        row.getCell(6).style = profileCellStyle(false);
+        row.getCell(7).border = { left: { style: 'medium', color: { argb: colors.navy } } };
+        worksheet.mergeCells('C4:D4');
         
-        // Row 5: School
-        const row5 = worksheet.addRow(['School / University:', this.profileData.school || '', '', 'Total Hours Rendered:', formatHM(totalHours)]);
-        row5.height = 20;
-        row5.getCell(1).style = profileCellStyle(true);
-        row5.getCell(2).style = profileCellStyle(false);
-        row5.getCell(3).style = { fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: colors.white } } };
-        row5.getCell(4).style = profileCellStyle(true);
-        row5.getCell(5).style = profileCellStyle(false);
+        // Row 5: School / University and Total Hours Rendered
+        row = worksheet.addRow(['', 'School / University:', this.profileData.school || '', this.profileData.school || '', 'Total Hours Rendered:', formatHM(totalHours), '']);
+        row.height = 31;
+        row.getCell(1).border = { left: { style: 'medium', color: { argb: colors.navy } }, right: { style: 'medium', color: { argb: colors.navy } } };
+        row.getCell(2).style = profileCellStyle(true);
+        row.getCell(2).alignment = { horizontal: 'right', vertical: 'center', wrapText: false };
+        row.getCell(3).style = profileCellStyle(false);
+        row.getCell(3).alignment = { horizontal: 'left', vertical: 'center', wrapText: true };
+        row.getCell(4).style = profileCellStyle(false);
+        row.getCell(4).alignment = { horizontal: 'left', vertical: 'center', wrapText: true };
+        row.getCell(5).style = profileCellStyle(true);
+        row.getCell(5).alignment = { horizontal: 'right', vertical: 'center', wrapText: false };
+        row.getCell(6).style = profileCellStyle(false);
+        row.getCell(6).font = { name: 'Arial', size: 10, bold: true, color: { argb: colors.navy } };
+        row.getCell(7).border = { left: { style: 'medium', color: { argb: colors.navy } } };
+        worksheet.mergeCells('C5:D5');
         
-        // Row 6: Company
-        const row6 = worksheet.addRow(['Company / Department:', this.profileData.company || '', '', '', '']);
-        row6.height = 18;
-        row6.getCell(1).style = profileCellStyle(true);
-        row6.getCell(2).style = profileCellStyle(false);
-        for (let i = 3; i <= 5; i++) {
-            row6.getCell(i).style = { fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: colors.white } } };
-        }
+        // Row 6: Company / Department
+        row = worksheet.addRow(['', 'Company / Department:', this.profileData.company || '', '', '', '', '']);
+        row.height = 20;
+        row.getCell(1).border = { left: { style: 'medium', color: { argb: colors.navy } }, right: { style: 'medium', color: { argb: colors.navy } } };
+        row.getCell(2).style = profileCellStyle(true);
+        row.getCell(3).style = profileCellStyle(false);
+        row.getCell(3).alignment = { horizontal: 'left', vertical: 'center' };
+        row.getCell(5).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFDEEAF1' } };
+        row.getCell(7).border = { left: { style: 'medium', color: { argb: colors.navy } } };
+        worksheet.mergeCells('C6:D6');
         
-        // Row 7: Period
-        const row7 = worksheet.addRow(['Period Covered:', `Month of ${monthName}`, '', '', '']);
-        row7.height = 18;
-        row7.getCell(1).style = profileCellStyle(true);
-        row7.getCell(2).style = profileCellStyle(false);
-        for (let i = 3; i <= 5; i++) {
-            row7.getCell(i).style = { fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: colors.white } } };
-        }
+        // Row 7: Period Covered
+        row = worksheet.addRow(['', 'Period Covered:', `Month of ${monthName}`, '', '', '', '']);
+        row.height = 20;
+        row.getCell(1).border = { left: { style: 'medium', color: { argb: colors.navy } }, right: { style: 'medium', color: { argb: colors.navy } } };
+        row.getCell(2).style = profileCellStyle(true);
+        row.getCell(3).style = profileCellStyle(false);
+        row.getCell(3).alignment = { horizontal: 'left', vertical: 'center' };
+        row.getCell(5).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFDEEAF1' } };
+        row.getCell(7).border = { left: { style: 'medium', color: { argb: colors.navy } } };
+        worksheet.mergeCells('C7:D7');
         
         // Row 8: Empty
-        worksheet.addRow(['', '', '', '', '']).height = 12;
+        row = worksheet.addRow(['', '', '', '', '', '', '']);
+        row.height = 12;
+        row.getCell(1).border = { left: { style: 'medium', color: { argb: colors.navy } }, right: { style: 'medium', color: { argb: colors.navy } } };
+        row.getCell(7).border = { left: { style: 'medium', color: { argb: colors.navy } } };
         
         // Row 9: Headers
-        const headerRow = worksheet.addRow(['No.', 'Date', 'Time In', 'Time Out', 'Hours Rendered']);
-        headerRow.height = 22;
-        for (let i = 1; i <= 5; i++) {
-            headerRow.getCell(i).style = headerCellStyle();
+        row = worksheet.addRow(['', 'No.', 'Date', 'Time In', 'Time Out', 'Hours Rendered', '']);
+        row.height = 27.8;
+        row.getCell(1).border = { left: { style: 'medium', color: { argb: colors.navy } }, right: { style: 'medium', color: { argb: colors.navy } } };
+        row.getCell(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF2E5090' } };
+        for (let i = 2; i <= 6; i++) {
+            row.getCell(i).style = headerCellStyle();
+            row.getCell(i).alignment = { horizontal: 'center', vertical: 'center', wrapText: false };
         }
+        row.getCell(7).border = { left: { style: 'medium', color: { argb: colors.navy } } };
+        row.getCell(7).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF2E5090' } };
         
         // Rows 10-34: Data
         for (let i = 0; i < 25; i++) {
             const rowNum = 10 + i;
-            const row = worksheet.addRow([]);
-            row.height = 20;
+            row = worksheet.addRow(['', '', '', '', '', '', '']);
+            row.height = 18;
+            
+            row.getCell(1).border = { left: { style: 'medium', color: { argb: colors.navy } }, right: { style: 'medium', color: { argb: colors.navy } } };
+            row.getCell(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF2E5090' } };
+            
+            // Alternating row fill
+            const hasAlternatingFill = i % 2 === 1;
+            const fillColor = hasAlternatingFill ? 'FFF2F2F2' : 'FFFFFFFF';
             
             let dateVal = '';
             let inVal = '';
@@ -1236,7 +1274,6 @@ class OJTCalculator {
             
             if (i < filteredEntries.length) {
                 const e = filteredEntries[i];
-                // Manually format date like "Feb 16, 2026 (Mon)"
                 const dateObj = new Date(e.date + 'T00:00:00');
                 const dtOpts = { month: 'short', day: 'numeric', year: 'numeric' };
                 const dayOpts = { weekday: 'short' };
@@ -1244,7 +1281,6 @@ class OJTCalculator {
                 const dayStr = dateObj.toLocaleDateString('en-US', dayOpts);
                 dateVal = `${dtStr} (${dayStr})`;
                 
-                // Manually format time
                 const formatTime = (timeStr) => {
                     if (!timeStr) return '';
                     let [h, m] = timeStr.split(':');
@@ -1260,50 +1296,178 @@ class OJTCalculator {
                 hrsVal = formatHM(e.hours);
             }
             
-            row.values = [i + 1, dateVal, inVal, outVal, hrsVal];
+            row.getCell(2).value = i + 1;
+            row.getCell(2).font = { name: 'Arial', size: 9, color: { argb: 'FF666666' } };
+            row.getCell(2).alignment = { horizontal: 'center', vertical: 'center' };
+            row.getCell(2).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: fillColor } };
+            row.getCell(2).border = {
+                top: { style: 'thin', color: { argb: colors.dataBorder } },
+                bottom: { style: 'thin', color: { argb: colors.dataBorder } },
+                left: { style: 'thin', color: { argb: colors.dataBorder } },
+                right: { style: 'thin', color: { argb: colors.dataBorder } }
+            };
             
-            for (let j = 1; j <= 5; j++) {
-                const cell = row.getCell(j);
-                cell.style = dataCellStyle(false, j === 2, j === 1);
-            }
+            row.getCell(3).value = dateVal;
+            row.getCell(3).alignment = { horizontal: 'left', vertical: 'center' };
+            row.getCell(3).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: fillColor } };
+            row.getCell(3).border = {
+                top: { style: 'thin', color: { argb: colors.dataBorder } },
+                bottom: { style: 'thin', color: { argb: colors.dataBorder } },
+                left: { style: 'thin', color: { argb: colors.dataBorder } },
+                right: { style: 'thin', color: { argb: colors.dataBorder } }
+            };
+            
+            row.getCell(4).value = inVal;
+            row.getCell(4).alignment = { horizontal: 'center', vertical: 'center' };
+            row.getCell(4).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: fillColor } };
+            row.getCell(4).border = {
+                top: { style: 'thin', color: { argb: colors.dataBorder } },
+                bottom: { style: 'thin', color: { argb: colors.dataBorder } },
+                left: { style: 'thin', color: { argb: colors.dataBorder } },
+                right: { style: 'thin', color: { argb: colors.dataBorder } }
+            };
+            
+            row.getCell(5).value = outVal;
+            row.getCell(5).alignment = { horizontal: 'center', vertical: 'center' };
+            row.getCell(5).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: fillColor } };
+            row.getCell(5).border = {
+                top: { style: 'thin', color: { argb: colors.dataBorder } },
+                bottom: { style: 'thin', color: { argb: colors.dataBorder } },
+                left: { style: 'thin', color: { argb: colors.dataBorder } },
+                right: { style: 'thin', color: { argb: colors.dataBorder } }
+            };
+            
+            row.getCell(6).value = hrsVal;
+            row.getCell(6).alignment = { horizontal: 'center', vertical: 'center' };
+            row.getCell(6).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: fillColor } };
+            row.getCell(6).border = {
+                top: { style: 'thin', color: { argb: colors.dataBorder } },
+                bottom: { style: 'thin', color: { argb: colors.dataBorder } },
+                left: { style: 'thin', color: { argb: colors.dataBorder } },
+                right: { style: 'thin', color: { argb: colors.dataBorder } }
+            };
+            
+            row.getCell(7).border = { left: { style: 'medium', color: { argb: colors.navy } } };
+            row.getCell(7).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF2E5090' } };
         }
         
-        // Next Row: Empty
-        worksheet.addRow(['', '', '', '', '']).height = 12;
+        // Row 35: Footer note
+        row = worksheet.addRow(['', '* Hours rendered are computed net of 1-hour lunch break, capped at 8 hours/day.', '', '', '', '', '']);
+        row.height = 21.8;
+        row.getCell(1).border = { left: { style: 'medium', color: { argb: colors.navy } }, right: { style: 'medium', color: { argb: colors.navy } } };
+        row.getCell(2).font = { name: 'Arial', size: 8, italic: true, color: { argb: 'FF666666' } };
+        row.getCell(2).alignment = { horizontal: 'left', vertical: 'center' };
+        row.getCell(7).border = { left: { style: 'medium', color: { argb: colors.navy } } };
+        worksheet.mergeCells('B35:F35');
         
-        // Next Row: Total
-        const totalRow = worksheet.addRow(['', 'TOTAL HOURS RENDERED', '', '', formatHM(totalHours)]);
-        totalRow.height = 20;
+        // Row 36: Total
+        row = worksheet.addRow(['', 'TOTAL HOURS RENDERED', '', '', '', formatHM(totalHours), '']);
+        row.height = 21.8;
+        row.getCell(1).border = { left: { style: 'medium', color: { argb: colors.navy } }, right: { style: 'medium', color: { argb: colors.navy } } };
         
-        worksheet.mergeCells(`B${totalRow.number}:D${totalRow.number}`);
-        totalRow.getCell(2).style = totalCellStyle(true);
-        totalRow.getCell(3).style = totalCellStyle(true);
-        totalRow.getCell(4).style = totalCellStyle(true);
-        totalRow.getCell(5).style = totalCellStyle(false);
-        totalRow.getCell(1).style = { 
-            border: { top: { style: 'thin', color: { argb: colors.dataBorder } } }
-        };
+        for (let i = 2; i <= 6; i++) {
+            row.getCell(i).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: colors.navy } };
+            row.getCell(i).font = { name: 'Arial', size: 10, bold: true, color: { argb: colors.white } };
+        }
         
-        // Rows 37-38: Empty
-        worksheet.addRow(['', '', '', '', '']).height = 15;
-        worksheet.addRow(['', '', '', '', '']).height = 15;
+        row.getCell(2).alignment = { horizontal: 'right', vertical: 'center' };
+        row.getCell(3).alignment = { horizontal: 'center', vertical: 'center' };
+        row.getCell(4).alignment = { horizontal: 'center', vertical: 'center' };
+        row.getCell(5).alignment = { horizontal: 'center', vertical: 'center' };
+        row.getCell(6).alignment = { horizontal: 'center', vertical: 'center' };
         
-        // Row 39: Certified Correct
-        const certRow = worksheet.addRow(['Certified Correct:', '', '', '', '']);
-        certRow.height = 18;
-        certRow.getCell(1).font = { name: 'Arial', size: 10, bold: true };
+        row.getCell(7).border = { left: { style: 'medium', color: { argb: colors.navy } } };
+        worksheet.mergeCells('B36:E36');
+        
+        // Row 37: Empty
+        row = worksheet.addRow(['', '', '', '', '', '', '']);
+        row.height = 14.4;
+        row.getCell(1).border = { left: { style: 'medium', color: { argb: colors.navy } }, right: { style: 'medium', color: { argb: colors.navy } } };
+        row.getCell(7).border = { left: { style: 'medium', color: { argb: colors.navy } } };
+        
+        // Row 38: Empty
+        row = worksheet.addRow(['', '', '', '', '', '', '']);
+        row.height = 14.4;
+        row.getCell(1).border = { left: { style: 'medium', color: { argb: colors.navy } }, right: { style: 'medium', color: { argb: colors.navy } } };
+        row.getCell(7).border = { left: { style: 'medium', color: { argb: colors.navy } } };
+        
+        // Rows 39-40: Certified correct and empty
+        row = worksheet.addRow(['', 'Certified Correct:', '', '', '', '', '']);
+        row.height = 13.5;
+        row.getCell(1).border = { left: { style: 'medium', color: { argb: colors.navy } }, right: { style: 'medium', color: { argb: colors.navy } } };
+        row.getCell(2).font = { name: 'Arial', size: 10, bold: true, color: { argb: colors.navy } };
+        row.getCell(2).alignment = { horizontal: 'left', vertical: 'center' };
+        row.getCell(7).border = { left: { style: 'medium', color: { argb: colors.navy } } };
         
         // Row 40: Empty
-        worksheet.addRow(['', '', '', '', '']).height = 20;
+        row = worksheet.addRow(['', '', '', '', '', '', '']);
+        row.height = 13.5;
+        row.getCell(1).border = { left: { style: 'medium', color: { argb: colors.navy } }, right: { style: 'medium', color: { argb: colors.navy } } };
+        row.getCell(7).border = { left: { style: 'medium', color: { argb: colors.navy } } };
         
-        // Row 41: Supervisor name
-        worksheet.addRow(['', this.profileData.supervisor || '', '', '', '']).height = 18;
+        // Row 41: Supervisor section
+        row = worksheet.addRow(['', '', '', '', '', '', '']);
+        row.height = 36;
+        row.getCell(1).border = { left: { style: 'medium', color: { argb: colors.navy } }, right: { style: 'medium', color: { argb: colors.navy } } };
+        for (let i = 3; i <= 5; i++) {
+            row.getCell(i).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFDEEAF1' } };
+            row.getCell(i).border = {
+                bottom: { style: 'medium', color: { argb: colors.navy } }
+            };
+        }
+        row.getCell(7).border = { left: { style: 'medium', color: { argb: colors.navy } } };
         
-        // Row 42: Supervisor role
-        worksheet.addRow(['', this.profileData.supervisorRole || 'OJT Supervisor / Immediate Head', '', '', '']).height = 18;
+        // Row 42: Supervisor name
+        row = worksheet.addRow(['', '', this.profileData.supervisor || '', '', '', '', '']);
+        row.height = 13.5;
+        row.getCell(1).border = { left: { style: 'medium', color: { argb: colors.navy } }, right: { style: 'medium', color: { argb: colors.navy } } };
+        row.getCell(3).value = this.profileData.supervisor || '';
+        row.getCell(3).font = { name: 'Arial', size: 9, color: { argb: 'FF444444' } };
+        row.getCell(3).alignment = { horizontal: 'center', vertical: 'center' };
+        row.getCell(7).border = { left: { style: 'medium', color: { argb: colors.navy } } };
+        worksheet.mergeCells('C42:E42');
         
-        // Row 43: Date line
-        worksheet.addRow(['Date: ___________________________', '', '', '', '']).height = 18;
+        // Row 43: Supervisor position
+        row = worksheet.addRow(['', '', this.profileData.supervisorRole || 'OJT Supervisor / Immediate Head', '', '', '', '']);
+        row.height = 13.5;
+        row.getCell(1).border = { left: { style: 'medium', color: { argb: colors.navy } }, right: { style: 'medium', color: { argb: colors.navy } } };
+        row.getCell(3).value = this.profileData.supervisorRole || 'OJT Supervisor / Immediate Head';
+        row.getCell(3).font = { name: 'Arial', size: 9, color: { argb: 'FF444444' } };
+        row.getCell(3).alignment = { horizontal: 'center', vertical: 'center' };
+        row.getCell(7).border = { left: { style: 'medium', color: { argb: colors.navy } } };
+        worksheet.mergeCells('C43:E43');
+        
+        // Row 44: OJT Supervisor label
+        row = worksheet.addRow(['', '', 'OJT Supervisor / Immediate Head', '', '', '', '']);
+        row.height = 18;
+        row.getCell(1).border = { left: { style: 'medium', color: { argb: colors.navy } }, right: { style: 'medium', color: { argb: colors.navy } } };
+        row.getCell(3).value = 'OJT Supervisor / Immediate Head';
+        row.getCell(3).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFBDD7EE' } };
+        row.getCell(3).font = { name: 'Arial', size: 10, bold: true, color: { argb: colors.navy } };
+        row.getCell(3).alignment = { horizontal: 'center', vertical: 'center' };
+        row.getCell(7).border = { left: { style: 'medium', color: { argb: colors.navy } } };
+        worksheet.mergeCells('C44:E44');
+        
+        // Row 45: Date line
+        row = worksheet.addRow(['', '', 'Date: ___________________________', '', '', '', '']);
+        row.height = 13.5;
+        row.getCell(1).border = { left: { style: 'medium', color: { argb: colors.navy } }, right: { style: 'medium', color: { argb: colors.navy } } };
+        row.getCell(3).value = 'Date: ___________________________';
+        row.getCell(3).font = { name: 'Arial', size: 9 };
+        row.getCell(3).alignment = { horizontal: 'left', vertical: 'center' };
+        row.getCell(7).border = { left: { style: 'medium', color: { argb: colors.navy } } };
+        worksheet.mergeCells('C45:D45');
+        
+        // Bottom border
+        row = worksheet.addRow(['', '', '', '', '', '', '']);
+        row.height = 7.5;
+        row.getCell(1).style = { border: { left: { style: 'medium', color: { argb: colors.navy } } } };
+        for (let i = 2; i <= 6; i++) {
+            row.getCell(i).border = { 
+                top: { style: 'medium', color: { argb: colors.navy } }
+            };
+        }
+        row.getCell(7).style = {};
         
         // Generate Excel file
         try {
@@ -2114,3 +2278,5 @@ class OJTCalculator {
         });
     }
 }
+
+
