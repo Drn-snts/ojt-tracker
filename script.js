@@ -1966,64 +1966,48 @@ class OJTCalculator {
             const taskTxt     = this._xmlEsc(d.task || '');
             const skillsTxt   = this._xmlEsc(d.skills || '');
             const problemsTxt = this._xmlEsc(d.problems || '');
+            
+            // Check if this day is a holiday or absence (check time field directly)
+            const isHolidayOrAbsent = timeTxt === 'HOLIDAY' || timeTxt === 'ABSENT';
+            
+            let secondColumnContent = `<w:r><w:t>${timeTxt}</w:t></w:r>`;
+            let thirdColumnContent = `<w:r><w:t xml:space="preserve">${taskTxt}</w:t></w:r>`;
+            
+            if (isHolidayOrAbsent) {
+                secondColumnContent = `<w:r></w:r>`;
+                if (timeTxt === 'HOLIDAY') {
+                    // Find holiday name from holidays list
+                    const dayDate = d.date;
+                    const holiday = holidays.find(h => h.date === dayDate);
+                    thirdColumnContent = `<w:r><w:rPr><w:b/><w:bCs/></w:rPr><w:t>HOLIDAY</w:t></w:r>` + (holiday && holiday.name ? `<w:r><w:t> (${this._xmlEsc(holiday.name)})</w:t></w:r>` : '');
+                } else {
+                    thirdColumnContent = `<w:r><w:rPr><w:b/><w:bCs/></w:rPr><w:t>ABSENT</w:t></w:r>`;
+                }
+            }
+            
             return `
 <w:tr>
   <w:trPr><w:trHeight w:val="1152"/></w:trPr>
-  <w:tc><w:tcPr><w:tcW w:w="1260" w:type="dxa"/><w:tcBorders><w:top w:val="single" w:sz="18" w:space="0" w:color="000000"/></w:tcBorders><w:tcMar><w:top w:w="100" w:type="dxa"/><w:left w:w="100" w:type="dxa"/><w:bottom w:w="100" w:type="dxa"/><w:right w:w="100" w:type="dxa"/></w:tcMar><w:vAlign w:val="center"/></w:tcPr>
+  <w:tc><w:tcPr><w:tcW w:w="1263" w:type="dxa"/><w:tcBorders><w:top w:val="single" w:sz="8" w:space="0" w:color="000000"/><w:left w:val="single" w:sz="8" w:space="0" w:color="000000"/><w:bottom w:val="single" w:sz="8" w:space="0" w:color="000000"/><w:right w:val="single" w:sz="8" w:space="0" w:color="000000"/></w:tcBorders><w:tcMar><w:top w:w="100" w:type="dxa"/><w:left w:w="100" w:type="dxa"/><w:bottom w:w="100" w:type="dxa"/><w:right w:w="100" w:type="dxa"/></w:tcMar><w:vAlign w:val="center"/></w:tcPr>
     <w:p><w:pPr><w:widowControl w:val="0"/><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:t>${dateTxt}</w:t></w:r></w:p>
   </w:tc>
-  <w:tc><w:tcPr><w:tcW w:w="1545" w:type="dxa"/><w:tcBorders><w:top w:val="single" w:sz="18" w:space="0" w:color="000000"/></w:tcBorders><w:tcMar><w:top w:w="100" w:type="dxa"/><w:left w:w="100" w:type="dxa"/><w:bottom w:w="100" w:type="dxa"/><w:right w:w="100" w:type="dxa"/></w:tcMar><w:vAlign w:val="center"/></w:tcPr>
-    <w:p><w:pPr><w:widowControl w:val="0"/><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:t>${timeTxt}</w:t></w:r></w:p>
+  <w:tc><w:tcPr><w:tcW w:w="1276" w:type="dxa"/><w:tcBorders><w:top w:val="single" w:sz="8" w:space="0" w:color="000000"/><w:left w:val="single" w:sz="8" w:space="0" w:color="000000"/><w:bottom w:val="single" w:sz="8" w:space="0" w:color="000000"/><w:right w:val="single" w:sz="8" w:space="0" w:color="000000"/></w:tcBorders><w:tcMar><w:top w:w="100" w:type="dxa"/><w:left w:w="100" w:type="dxa"/><w:bottom w:w="100" w:type="dxa"/><w:right w:w="100" w:type="dxa"/></w:tcMar><w:vAlign w:val="center"/></w:tcPr>
+    <w:p><w:pPr><w:widowControl w:val="0"/><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr>${secondColumnContent}</w:p>
   </w:tc>
-  <w:tc><w:tcPr><w:tcW w:w="3675" w:type="dxa"/><w:tcBorders><w:top w:val="single" w:sz="18" w:space="0" w:color="000000"/></w:tcBorders><w:tcMar><w:top w:w="100" w:type="dxa"/><w:left w:w="100" w:type="dxa"/><w:bottom w:w="100" w:type="dxa"/><w:right w:w="100" w:type="dxa"/></w:tcMar><w:vAlign w:val="center"/></w:tcPr>
-    <w:p><w:pPr><w:widowControl w:val="0"/><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:t xml:space="preserve">${taskTxt}</w:t></w:r></w:p>
+  <w:tc><w:tcPr><w:tcW w:w="3258" w:type="dxa"/><w:tcBorders><w:top w:val="single" w:sz="8" w:space="0" w:color="000000"/><w:left w:val="single" w:sz="8" w:space="0" w:color="000000"/><w:bottom w:val="single" w:sz="8" w:space="0" w:color="000000"/><w:right w:val="single" w:sz="8" w:space="0" w:color="000000"/></w:tcBorders><w:tcMar><w:top w:w="100" w:type="dxa"/><w:left w:w="100" w:type="dxa"/><w:bottom w:w="100" w:type="dxa"/><w:right w:w="100" w:type="dxa"/></w:tcMar><w:vAlign w:val="center"/></w:tcPr>
+    <w:p><w:pPr><w:widowControl w:val="0"/><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr>${thirdColumnContent}</w:p>
   </w:tc>
-  <w:tc><w:tcPr><w:tcW w:w="2310" w:type="dxa"/><w:tcBorders><w:top w:val="single" w:sz="18" w:space="0" w:color="000000"/></w:tcBorders><w:tcMar><w:top w:w="100" w:type="dxa"/><w:left w:w="100" w:type="dxa"/><w:bottom w:w="100" w:type="dxa"/><w:right w:w="100" w:type="dxa"/></w:tcMar><w:vAlign w:val="center"/></w:tcPr>
+  <w:tc><w:tcPr><w:tcW w:w="2409" w:type="dxa"/><w:tcBorders><w:top w:val="single" w:sz="8" w:space="0" w:color="000000"/><w:left w:val="single" w:sz="8" w:space="0" w:color="000000"/><w:bottom w:val="single" w:sz="8" w:space="0" w:color="000000"/><w:right w:val="single" w:sz="8" w:space="0" w:color="000000"/></w:tcBorders><w:tcMar><w:top w:w="100" w:type="dxa"/><w:left w:w="100" w:type="dxa"/><w:bottom w:w="100" w:type="dxa"/><w:right w:w="100" w:type="dxa"/></w:tcMar><w:vAlign w:val="center"/></w:tcPr>
     <w:p><w:pPr><w:widowControl w:val="0"/><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:t>${skillsTxt}</w:t></w:r></w:p>
   </w:tc>
-  <w:tc><w:tcPr><w:tcW w:w="2010" w:type="dxa"/><w:tcBorders><w:top w:val="single" w:sz="18" w:space="0" w:color="000000"/></w:tcBorders><w:tcMar><w:top w:w="100" w:type="dxa"/><w:left w:w="100" w:type="dxa"/><w:bottom w:w="100" w:type="dxa"/><w:right w:w="100" w:type="dxa"/></w:tcMar><w:vAlign w:val="center"/></w:tcPr>
+  <w:tc><w:tcPr><w:tcW w:w="2564" w:type="dxa"/><w:tcBorders><w:top w:val="single" w:sz="8" w:space="0" w:color="000000"/><w:left w:val="single" w:sz="8" w:space="0" w:color="000000"/><w:bottom w:val="single" w:sz="8" w:space="0" w:color="000000"/><w:right w:val="single" w:sz="8" w:space="0" w:color="000000"/></w:tcBorders><w:tcMar><w:top w:w="100" w:type="dxa"/><w:left w:w="100" w:type="dxa"/><w:bottom w:w="100" w:type="dxa"/><w:right w:w="100" w:type="dxa"/></w:tcMar><w:vAlign w:val="center"/></w:tcPr>
     <w:p><w:pPr><w:widowControl w:val="0"/><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:t xml:space="preserve">${problemsTxt}</w:t></w:r></w:p>
   </w:tc>
 </w:tr>`;
         }).join('\n');
 
-        // ── Build holidays/absences XML section ──
+        // ── Holidays/absences section removed ──
         let holidaysAbsencesXml = '';
-        if (holidays.length > 0 || absences.length > 0) {
-            const holidaysList = holidays.map(h => {
-                const dateStr = h.date ? new Date(h.date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '';
-                return `${dateStr}${h.name ? ' (' + this._xmlEsc(h.name) + ')' : ''}`;
-            }).join(', ');
-            
-            const absencesList = absences.map(a => {
-                const dateStr = a.date ? new Date(a.date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '';
-                return dateStr;
-            }).join(', ');
-
-            holidaysAbsencesXml = `
-    <w:p>
-      <w:pPr><w:spacing w:after="120"/></w:pPr>
-      <w:r><w:rPr><w:b/><w:bCs/></w:rPr><w:t>Holidays &amp; Absences:</w:t></w:r>
-    </w:p>`;
-
-            if (holidays.length > 0) {
-                holidaysAbsencesXml += `
-    <w:p>
-      <w:pPr><w:spacing w:before="60" w:after="60"/></w:pPr>
-      <w:r><w:rPr><w:b/><w:bCs/></w:rPr><w:t>Holidays/Days Off: </w:t></w:r>
-      <w:r><w:t>${this._xmlEsc(holidaysList)}</w:t></w:r>
-    </w:p>`;
-            }
-
-            if (absences.length > 0) {
-                holidaysAbsencesXml += `
-    <w:p>
-      <w:pPr><w:spacing w:before="60" w:after="60"/></w:pPr>
-      <w:r><w:rPr><w:b/><w:bCs/></w:rPr><w:t>Absences: </w:t></w:r>
-      <w:r><w:t>${this._xmlEsc(absencesList)}</w:t></w:r>
-    </w:p>`;
-            }
-        }
 
         const docXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <w:document xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
@@ -2039,17 +2023,14 @@ class OJTCalculator {
     <w:p>
       <w:r><w:t xml:space="preserve">Name: </w:t></w:r>
       <w:r><w:rPr><w:u w:val="single"/></w:rPr><w:t>${this._xmlEsc(name)}</w:t></w:r>
-      <w:r><w:t>_____________________________________</w:t></w:r>
     </w:p>
     <w:p>
       <w:r><w:t xml:space="preserve">Inclusive Dates: </w:t></w:r>
-      <w:r><w:rPr><w:u w:val="single"/></w:rPr><w:t xml:space="preserve">${this._xmlEsc(inclusiveDates)}  </w:t></w:r>
-      <w:r><w:t>___________________________</w:t></w:r>
+      <w:r><w:rPr><w:u w:val="single"/></w:rPr><w:t xml:space="preserve">${this._xmlEsc(inclusiveDates)}</w:t></w:r>
     </w:p>
     <w:p>
       <w:r><w:t xml:space="preserve">Total Number of Hours: </w:t></w:r>
       <w:r><w:rPr><w:u w:val="single"/></w:rPr><w:t>${this._xmlEsc(totalHours)}</w:t></w:r>
-      <w:r><w:t>______________________</w:t></w:r>
     </w:p>
     <w:tbl>
       <w:tblPr>
@@ -2057,7 +2038,7 @@ class OJTCalculator {
         <w:tblBorders>
           <w:top w:val="single" w:sz="8" w:space="0" w:color="000000"/>
           <w:left w:val="single" w:sz="8" w:space="0" w:color="000000"/>
-          <w:bottom w:val="single" w:sz="8" w:space="0" w:color="000000"/>
+          <w:bottom w:val="none"/>
           <w:right w:val="single" w:sz="8" w:space="0" w:color="000000"/>
           <w:insideH w:val="single" w:sz="8" w:space="0" w:color="000000"/>
           <w:insideV w:val="single" w:sz="8" w:space="0" w:color="000000"/>
@@ -2065,23 +2046,23 @@ class OJTCalculator {
         <w:tblLayout w:type="fixed"/>
       </w:tblPr>
       <w:tblGrid>
-        <w:gridCol w:w="1260"/><w:gridCol w:w="1545"/><w:gridCol w:w="3675"/>
-        <w:gridCol w:w="2310"/><w:gridCol w:w="2010"/>
+        <w:gridCol w:w="1263"/><w:gridCol w:w="1276"/><w:gridCol w:w="3258"/>
+        <w:gridCol w:w="2409"/><w:gridCol w:w="2564"/>
       </w:tblGrid>
       <w:tr>
-        <w:tc><w:tcPr><w:tcW w:w="1260" w:type="dxa"/><w:tcBorders><w:bottom w:val="single" w:sz="18" w:space="0" w:color="000000"/></w:tcBorders><w:tcMar><w:top w:w="100" w:type="dxa"/><w:left w:w="100" w:type="dxa"/><w:bottom w:w="100" w:type="dxa"/><w:right w:w="100" w:type="dxa"/></w:tcMar><w:vAlign w:val="center"/></w:tcPr>
+        <w:tc><w:tcPr><w:tcW w:w="1263" w:type="dxa"/><w:tcBorders><w:bottom w:val="single" w:sz="18" w:space="0" w:color="000000"/></w:tcBorders><w:tcMar><w:top w:w="100" w:type="dxa"/><w:left w:w="100" w:type="dxa"/><w:bottom w:w="100" w:type="dxa"/><w:right w:w="100" w:type="dxa"/></w:tcMar><w:vAlign w:val="center"/></w:tcPr>
           <w:p><w:pPr><w:widowControl w:val="0"/><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/><w:rPr><w:b/><w:bCs/></w:rPr></w:pPr><w:r><w:rPr><w:b/><w:bCs/></w:rPr><w:t>Date</w:t></w:r></w:p>
         </w:tc>
-        <w:tc><w:tcPr><w:tcW w:w="1545" w:type="dxa"/><w:tcBorders><w:bottom w:val="single" w:sz="18" w:space="0" w:color="000000"/></w:tcBorders><w:tcMar><w:top w:w="100" w:type="dxa"/><w:left w:w="100" w:type="dxa"/><w:bottom w:w="100" w:type="dxa"/><w:right w:w="100" w:type="dxa"/></w:tcMar><w:vAlign w:val="center"/></w:tcPr>
+        <w:tc><w:tcPr><w:tcW w:w="1276" w:type="dxa"/><w:tcBorders><w:bottom w:val="single" w:sz="18" w:space="0" w:color="000000"/></w:tcBorders><w:tcMar><w:top w:w="100" w:type="dxa"/><w:left w:w="100" w:type="dxa"/><w:bottom w:w="100" w:type="dxa"/><w:right w:w="100" w:type="dxa"/></w:tcMar><w:vAlign w:val="center"/></w:tcPr>
           <w:p><w:pPr><w:widowControl w:val="0"/><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/><w:rPr><w:b/><w:bCs/></w:rPr></w:pPr><w:r><w:rPr><w:b/><w:bCs/></w:rPr><w:t>Time-in/ Time-out</w:t></w:r></w:p>
         </w:tc>
-        <w:tc><w:tcPr><w:tcW w:w="3675" w:type="dxa"/><w:tcBorders><w:bottom w:val="single" w:sz="18" w:space="0" w:color="000000"/></w:tcBorders><w:tcMar><w:top w:w="100" w:type="dxa"/><w:left w:w="100" w:type="dxa"/><w:bottom w:w="100" w:type="dxa"/><w:right w:w="100" w:type="dxa"/></w:tcMar><w:vAlign w:val="center"/></w:tcPr>
+        <w:tc><w:tcPr><w:tcW w:w="3258" w:type="dxa"/><w:tcBorders><w:bottom w:val="single" w:sz="18" w:space="0" w:color="000000"/></w:tcBorders><w:tcMar><w:top w:w="100" w:type="dxa"/><w:left w:w="100" w:type="dxa"/><w:bottom w:w="100" w:type="dxa"/><w:right w:w="100" w:type="dxa"/></w:tcMar><w:vAlign w:val="center"/></w:tcPr>
           <w:p><w:pPr><w:widowControl w:val="0"/><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/><w:rPr><w:b/><w:bCs/></w:rPr></w:pPr><w:r><w:rPr><w:b/><w:bCs/></w:rPr><w:t>Task Performed/ Key Accomplishments</w:t></w:r></w:p>
         </w:tc>
-        <w:tc><w:tcPr><w:tcW w:w="2310" w:type="dxa"/><w:tcBorders><w:bottom w:val="single" w:sz="18" w:space="0" w:color="000000"/></w:tcBorders><w:tcMar><w:top w:w="100" w:type="dxa"/><w:left w:w="100" w:type="dxa"/><w:bottom w:w="100" w:type="dxa"/><w:right w:w="100" w:type="dxa"/></w:tcMar><w:vAlign w:val="center"/></w:tcPr>
+        <w:tc><w:tcPr><w:tcW w:w="2409" w:type="dxa"/><w:tcBorders><w:bottom w:val="single" w:sz="18" w:space="0" w:color="000000"/></w:tcBorders><w:tcMar><w:top w:w="100" w:type="dxa"/><w:left w:w="100" w:type="dxa"/><w:bottom w:w="100" w:type="dxa"/><w:right w:w="100" w:type="dxa"/></w:tcMar><w:vAlign w:val="center"/></w:tcPr>
           <w:p><w:pPr><w:widowControl w:val="0"/><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/><w:rPr><w:b/><w:bCs/></w:rPr></w:pPr><w:r><w:rPr><w:b/><w:bCs/></w:rPr><w:t>Skills Developed</w:t></w:r></w:p>
         </w:tc>
-        <w:tc><w:tcPr><w:tcW w:w="2010" w:type="dxa"/><w:tcBorders><w:bottom w:val="single" w:sz="18" w:space="0" w:color="000000"/></w:tcBorders><w:tcMar><w:top w:w="100" w:type="dxa"/><w:left w:w="100" w:type="dxa"/><w:bottom w:w="100" w:type="dxa"/><w:right w:w="100" w:type="dxa"/></w:tcMar><w:vAlign w:val="center"/></w:tcPr>
+        <w:tc><w:tcPr><w:tcW w:w="2564" w:type="dxa"/><w:tcBorders><w:bottom w:val="single" w:sz="18" w:space="0" w:color="000000"/></w:tcBorders><w:tcMar><w:top w:w="100" w:type="dxa"/><w:left w:w="100" w:type="dxa"/><w:bottom w:w="100" w:type="dxa"/><w:right w:w="100" w:type="dxa"/></w:tcMar><w:vAlign w:val="center"/></w:tcPr>
           <w:p><w:pPr><w:widowControl w:val="0"/><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/><w:rPr><w:b/><w:bCs/></w:rPr></w:pPr><w:r><w:rPr><w:b/><w:bCs/></w:rPr><w:t>Problems/ Challenges Encountered</w:t></w:r></w:p>
         </w:tc>
       </w:tr>
@@ -2092,26 +2073,45 @@ class OJTCalculator {
     <w:p>
       <w:r><w:rPr><w:i/></w:rPr><w:t>Verified by:</w:t></w:r>
     </w:p>
-    <w:p><w:pPr><w:spacing w:after="720"/></w:pPr></w:p>
-    <w:p>
-      <w:r>
-        <w:rPr><w:u w:val="single"/></w:rPr>
-        <w:t xml:space="preserve">${this._xmlEsc(supervisorName)}                    </w:t>
-      </w:r>
-      <w:r><w:t xml:space="preserve">         </w:t></w:r>
-      <w:r>
-        <w:rPr><w:u w:val="single"/></w:rPr>
-        <w:t xml:space="preserve">${this._xmlEsc(dateSignedDisplay)}          </w:t>
-      </w:r>
-    </w:p>
-    <w:p>
-      <w:r><w:t xml:space="preserve">(Name of ojt supervisor)       </w:t></w:r>
-      <w:r><w:t xml:space="preserve">         Date</w:t></w:r>
-    </w:p>
+    <w:p><w:pPr><w:spacing w:after="120"/></w:pPr></w:p>
+    <w:p><w:pPr><w:spacing w:after="120"/></w:pPr></w:p>
+    <w:tbl>
+      <w:tblPr>
+        <w:tblW w:w="10800" w:type="dxa"/>
+        <w:tblBorders>
+          <w:top w:val="none"/>
+          <w:left w:val="none"/>
+          <w:bottom w:val="none"/>
+          <w:right w:val="none"/>
+          <w:insideH w:val="none"/>
+          <w:insideV w:val="none"/>
+        </w:tblBorders>
+        <w:tblLayout w:type="fixed"/>
+      </w:tblPr>
+      <w:tblGrid>
+        <w:gridCol w:w="5400"/><w:gridCol w:w="5400"/>
+      </w:tblGrid>
+      <w:tr>
+        <w:tc><w:tcPr><w:tcW w:w="5400" w:type="dxa"/><w:tcBorders><w:top w:val="none"/><w:left w:val="none"/><w:bottom w:val="none"/><w:right w:val="none"/></w:tcBorders></w:tcPr>
+          <w:p><w:pPr><w:spacing w:after="0"/></w:pPr><w:r><w:rPr><w:u w:val="single"/></w:rPr><w:t xml:space="preserve">${this._xmlEsc(supervisorName)}</w:t></w:r></w:p>
+        </w:tc>
+        <w:tc><w:tcPr><w:tcW w:w="5400" w:type="dxa"/><w:tcBorders><w:top w:val="none"/><w:left w:val="none"/><w:bottom w:val="none"/><w:right w:val="none"/></w:tcBorders></w:tcPr>
+          <w:p><w:pPr><w:spacing w:after="0"/><w:jc w:val="right"/></w:pPr><w:r><w:rPr><w:u w:val="single"/></w:rPr><w:t>${this._xmlEsc(dateSignedDisplay)}</w:t></w:r></w:p>
+        </w:tc>
+      </w:tr>
+      <w:tr>
+        <w:tc><w:tcPr><w:tcW w:w="5400" w:type="dxa"/><w:tcBorders><w:top w:val="none"/><w:left w:val="none"/><w:bottom w:val="none"/><w:right w:val="none"/></w:tcBorders></w:tcPr>
+          <w:p><w:pPr><w:spacing w:after="0"/></w:pPr><w:r><w:t xml:space="preserve">Supervisor's Name over Signature</w:t></w:r></w:p>
+        </w:tc>
+        <w:tc><w:tcPr><w:tcW w:w="5400" w:type="dxa"/><w:tcBorders><w:top w:val="none"/><w:left w:val="none"/><w:bottom w:val="none"/><w:right w:val="none"/></w:tcBorders></w:tcPr>
+          <w:p><w:pPr><w:spacing w:after="0"/><w:jc w:val="right"/></w:pPr><w:r><w:t>Date</w:t></w:r></w:p>
+        </w:tc>
+      </w:tr>
+    </w:tbl>
     ${supervisorRole ? `<w:p><w:r><w:t>${this._xmlEsc(supervisorRole)}</w:t></w:r></w:p>` : ''}
     <w:sectPr>
       <w:pgSz w:w="12240" w:h="15840"/>
-      <w:pgMar w:top="1440" w:right="1440" w:bottom="1440" w:left="1440" w:header="720" w:footer="720" w:gutter="0"/>
+      <w:pgMar w:top="720" w:right="720" w:bottom="720" w:left="720" w:header="720" w:footer="720" w:gutter="0"/>
     </w:sectPr>
   </w:body>
 </w:document>`;
