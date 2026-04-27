@@ -925,124 +925,114 @@ class OJTCalculator {
             return `${h}:${m.toString().padStart(2, '0')}`;
         })();
         
-        // Build preview matching Excel format exactly
-        let html = `<div style="border: 12px solid #1f3864; padding: 0; background: white; font-family: Arial, sans-serif; font-size: 11px;">
+        // Build preview matching Excel format exactly with proper HTML table
+        let html = `<div style="padding: 20px; background: #f5f5f5; min-height: 100vh;">
+        <table style="width: 100%; max-width: 900px; margin: 0 auto; border-collapse: collapse; background: white; font-family: Arial, sans-serif; font-size: 11px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
         
         <!-- Title Section -->
-        <div style="background: #1f3864; color: white; padding: 12px; text-align: center;">
-            <div style="font-size: 18px; font-weight: 700;">DAILY TIME REPORT</div>
-            <div style="font-size: 10px; margin-top: 2px;">On-the-Job Training</div>
-        </div>
+        <tbody>
+        <tr>
+            <td colspan="6" style="background: #1f3864; color: white; padding: 15px; text-align: center; border: 2px solid #1f3864;">
+                <div style="font-size: 18px; font-weight: bold; margin-bottom: 4px;">DAILY TIME REPORT</div>
+                <div style="font-size: 11px;">On-the-Job Training</div>
+            </td>
+        </tr>
         
         <!-- Profile Section -->
-        <table style="width: 100%; border-collapse: collapse; font-size: 10px;">
-            <tbody>
-                <tr>
-                    <td style="background: #deeaf1; padding: 8px 6px; border: 1px solid #b4c6e7; font-weight: 600; width: 20%;">Name:</td>
-                    <td style="background: white; padding: 8px 6px; border: 1px solid #b4c6e7; width: 30%;">${this.profileData.name || ''}</td>
-                    <td style="background: #deeaf1; padding: 8px 6px; border: 1px solid #b4c6e7; font-weight: 600; width: 30%;">Required OJT Hours:</td>
-                    <td style="background: white; padding: 8px 6px; border: 1px solid #b4c6e7; text-align: center; font-weight: 600; width: 20%;">${this.hoursNeeded}</td>
-                </tr>
-                <tr>
-                    <td style="background: #deeaf1; padding: 8px 6px; border: 1px solid #b4c6e7; font-weight: 600;">School / University:</td>
-                    <td style="background: white; padding: 8px 6px; border: 1px solid #b4c6e7;">${this.profileData.school || ''}</td>
-                    <td style="background: #deeaf1; padding: 8px 6px; border: 1px solid #b4c6e7; font-weight: 600;">Total Hours Rendered:</td>
-                    <td style="background: white; padding: 8px 6px; border: 1px solid #b4c6e7; text-align: center; font-weight: 600;">${totalHoursFormatted}</td>
-                </tr>
-                <tr>
-                    <td style="background: #deeaf1; padding: 8px 6px; border: 1px solid #b4c6e7; font-weight: 600;">Company / Department:</td>
-                    <td style="background: white; padding: 8px 6px; border: 1px solid #b4c6e7;">${this.profileData.company || ''}</td>
-                    <td style="background: #deeaf1; padding: 8px 6px; border: 1px solid #b4c6e7; font-weight: 600;">Period Covered:</td>
-                    <td style="background: white; padding: 8px 6px; border: 1px solid #b4c6e7;">Month of ${monthName}</td>
-                </tr>
-            </tbody>
-        </table>
+        <tr>
+            <td style="background: #deeaf1; padding: 8px 10px; border: 1px solid #b4c6e7; font-weight: 600; font-size: 10px; width: 20%;">Name:</td>
+            <td style="background: white; padding: 8px 10px; border: 1px solid #b4c6e7; font-size: 10px; width: 30%;">${this.profileData.name || ''}</td>
+            <td style="background: #deeaf1; padding: 8px 10px; border: 1px solid #b4c6e7; font-weight: 600; font-size: 10px; width: 20%;">Required OJT Hours:</td>
+            <td style="background: white; padding: 8px 10px; border: 1px solid #b4c6e7; text-align: center; font-weight: 600; font-size: 10px; width: 15%;">${this.hoursNeeded}</td>
+        </tr>
         
-        <!-- Data Table -->
-        <table style="width: 100%; border-collapse: collapse; font-size: 10px;">
-            <thead>
-                <tr style="background: #1f3864; color: white;">
-                    <th style="padding: 8px 6px; text-align: center; font-weight: 600; border: 1px solid #b4c6e7; width: 8%;">No.</th>
-                    <th style="padding: 8px 6px; text-align: center; font-weight: 600; border: 1px solid #b4c6e7; width: 32%;">Date</th>
-                    <th style="padding: 8px 6px; text-align: center; font-weight: 600; border: 1px solid #b4c6e7; width: 18%;">Time In</th>
-                    <th style="padding: 8px 6px; text-align: center; font-weight: 600; border: 1px solid #b4c6e7; width: 18%;">Time Out</th>
-                    <th style="padding: 8px 6px; text-align: center; font-weight: 600; border: 1px solid #b4c6e7; width: 18%;">Hours Rendered</th>
-                </tr>
-            </thead>
-            <tbody>`;
+        <tr>
+            <td style="background: #deeaf1; padding: 8px 10px; border: 1px solid #b4c6e7; font-weight: 600; font-size: 10px;">School / University:</td>
+            <td style="background: white; padding: 8px 10px; border: 1px solid #b4c6e7; font-size: 10px;">${this.profileData.school || ''}</td>
+            <td style="background: #deeaf1; padding: 8px 10px; border: 1px solid #b4c6e7; font-weight: 600; font-size: 10px;">Total Hours Rendered:</td>
+            <td style="background: white; padding: 8px 10px; border: 1px solid #b4c6e7; text-align: center; font-weight: 600; font-size: 10px;">${totalHoursFormatted}</td>
+        </tr>
         
-        // Add entries
-        filteredEntries.forEach((e, idx) => {
-            const dateObj = new Date(e.date + 'T00:00:00');
-            const dtOpts = { month: 'short', day: 'numeric', year: 'numeric' };
-            const dayOpts = { weekday: 'short' };
-            const dtStr = dateObj.toLocaleDateString('en-US', dtOpts);
-            const dayStr = dateObj.toLocaleDateString('en-US', dayOpts);
-            const dateStr = `${dtStr} (${dayStr})`;
-            const bgColor = idx % 2 === 0 ? '#ffffff' : '#bdd7ee';
+        <tr>
+            <td style="background: #deeaf1; padding: 8px 10px; border: 1px solid #b4c6e7; font-weight: 600; font-size: 10px;">Company / Department:</td>
+            <td style="background: white; padding: 8px 10px; border: 1px solid #b4c6e7; font-size: 10px;">${this.profileData.company || ''}</td>
+            <td style="background: #deeaf1; padding: 8px 10px; border: 1px solid #b4c6e7; font-weight: 600; font-size: 10px;">Period Covered:</td>
+            <td style="background: white; padding: 8px 10px; border: 1px solid #b4c6e7; font-size: 10px;">Month of ${monthName}</td>
+        </tr>
+        
+        <!-- Header Row -->
+        <tr style="background: #1f3864; color: white;">
+            <td style="background: #1f3864; border: 1px solid #b4c6e7; padding: 10px; text-align: center; font-weight: 600; font-size: 10px; width: 8%;">No.</td>
+            <td style="background: #1f3864; border: 1px solid #b4c6e7; padding: 10px; text-align: center; font-weight: 600; font-size: 10px; width: 25%;">Date</td>
+            <td style="background: #1f3864; border: 1px solid #b4c6e7; padding: 10px; text-align: center; font-weight: 600; font-size: 10px; width: 22%;">Time In</td>
+            <td style="background: #1f3864; border: 1px solid #b4c6e7; padding: 10px; text-align: center; font-weight: 600; font-size: 10px; width: 22%;">Time Out</td>
+            <td style="background: #1f3864; border: 1px solid #b4c6e7; padding: 10px; text-align: center; font-weight: 600; font-size: 10px; width: 23%;">Hours Rendered</td>
+        </tr>`;
+        
+        // Add data rows
+        for (let i = 0; i < 25; i++) {
+            const bgColor = i % 2 === 0 ? '#ffffff' : '#F2F2F2';
+            let dateVal = '', inVal = '', outVal = '', hrsVal = '';
             
-            html += `<tr style="background: ${bgColor};">
-                <td style="padding: 6px 4px; text-align: center; border: 1px solid #b4c6e7;">${idx + 1}</td>
-                <td style="padding: 6px 4px; text-align: left; border: 1px solid #b4c6e7;">${dateStr}</td>
-                <td style="padding: 6px 4px; text-align: center; border: 1px solid #b4c6e7;">${this.to12h(e.timeIn)}</td>
-                <td style="padding: 6px 4px; text-align: center; border: 1px solid #b4c6e7;">${this.to12h(e.timeOut)}</td>
-                <td style="padding: 6px 4px; text-align: center; border: 1px solid #b4c6e7;">${(() => { const h = Math.floor(e.hours); const m = Math.round((e.hours - h) * 60); return `${h}:${m.toString().padStart(2, '0')}`; })()}</td>
-            </tr>`;
-        });
-        
-        // Add empty rows to fill up to 25 rows
-        for (let i = filteredEntries.length; i < 25; i++) {
-            const rowNum = i + 1;
-            const bgColor = rowNum % 2 === 0 ? '#ffffff' : '#bdd7ee';
-            html += `<tr style="background: ${bgColor};">
-                <td style="padding: 6px 4px; text-align: center; border: 1px solid #b4c6e7;">${rowNum}</td>
-                <td style="padding: 6px 4px; border: 1px solid #b4c6e7;"></td>
-                <td style="padding: 6px 4px; border: 1px solid #b4c6e7;"></td>
-                <td style="padding: 6px 4px; border: 1px solid #b4c6e7;"></td>
-                <td style="padding: 6px 4px; border: 1px solid #b4c6e7;"></td>
-            </tr>`;
+            if (i < filteredEntries.length) {
+                const e = filteredEntries[i];
+                const dateObj = new Date(e.date + 'T00:00:00');
+                const dtOpts = { month: 'short', day: 'numeric', year: 'numeric' };
+                const dayOpts = { weekday: 'short' };
+                const dtStr = dateObj.toLocaleDateString('en-US', dtOpts);
+                const dayStr = dateObj.toLocaleDateString('en-US', dayOpts);
+                dateVal = `${dtStr} (${dayStr})`;
+                inVal = this.to12h(e.timeIn);
+                outVal = this.to12h(e.timeOut);
+                const h = Math.floor(e.hours);
+                const m = Math.round((e.hours - h) * 60);
+                hrsVal = h + ':' + m.toString().padStart(2, '0');
+            }
+            
+            html += '<tr style="background: ' + bgColor + ';">' +
+                '<td style="border: 1px solid #b4c6e7; padding: 8px; text-align: center; font-size: 9px; color: #666666;">' + (i + 1) + '</td>' +
+                '<td style="border: 1px solid #b4c6e7; padding: 8px; text-align: left; font-size: 10px;">' + dateVal + '</td>' +
+                '<td style="border: 1px solid #b4c6e7; padding: 8px; text-align: center; font-size: 10px;">' + inVal + '</td>' +
+                '<td style="border: 1px solid #b4c6e7; padding: 8px; text-align: center; font-size: 10px;">' + outVal + '</td>' +
+                '<td style="border: 1px solid #b4c6e7; padding: 8px; text-align: center; font-size: 10px;">' + hrsVal + '</td>' +
+            '</tr>';
         }
         
-        html += `</tbody></table>
+        // Footer note
+        html += '<tr>' +
+            '<td colspan="5" style="border: 1px solid #b4c6e7; padding: 8px; font-style: italic; font-size: 8px; color: #666666;">* Hours rendered are computed net of 1-hour lunch break, capped at 8 hours/day.</td>' +
+        '</tr>';
         
-        <!-- Footer Note -->
-        <div style="font-size: 9px; color: #333; padding: 6px 8px; border: 1px solid #b4c6e7; border-top: none; font-style: italic;">
-            * Hours rendered are computed net of 1-hour lunch break, deduct if overage of 8 hours per day.
-        </div>
+        // Total row
+        html += '<tr style="background: #1f3864; color: white;">' +
+            '<td colspan="4" style="border: 1px solid #b4c6e7; padding: 12px; text-align: right; font-weight: 600; font-size: 10px;">TOTAL HOURS RENDERED</td>' +
+            '<td style="border: 1px solid #b4c6e7; padding: 12px; text-align: center; font-weight: 600; font-size: 10px; background: #1f3864;">' + totalHoursFormatted + '</td>' +
+        '</tr>';
         
-        <!-- Total Row -->
-        <table style="width: 100%; border-collapse: collapse;">
-            <tr style="background: #1f3864; color: white;">
-                <td style="padding: 10px 8px; text-align: left; font-weight: 600; border: 1px solid #b4c6e7; flex: 1;">TOTAL HOURS RENDERED</td>
-                <td style="padding: 10px 8px; text-align: center; font-weight: 600; width: 100px; border: 1px solid #b4c6e7;">${totalHoursFormatted}</td>
-            </tr>
-        </table>
+        // Empty row
+        html += '<tr><td colspan="5" style="height: 8px;"></td></tr>';
         
-        <!-- Certified Correct Section -->
-        <div style="padding: 12px 8px; border: 1px solid #b4c6e7; border-top: none; background: white;">
-            <div style="font-weight: 600; font-size: 10px; margin-bottom: 12px;">Certified Correct:</div>
-            
-            <!-- Supervisor name & signature area -->
-            <div style="margin-bottom: 12px;">
-                <div style="background: #bdd7ee; padding: 16px 8px 4px 8px; text-align: center; min-height: 40px; border: 1px solid #b4c6e7; display: flex; align-items: flex-end; justify-content: center;">
-                    <span style="font-size: 9px; font-weight: 600;">${this.profileData.supervisor || ''}</span>
-                </div>
-                <div style="text-align: center; font-size: 9px; padding: 4px 8px;">${this.profileData.supervisorRole || ''}</div>
-            </div>
-            
-            <!-- Role label -->
-            <div style="background: #bdd7ee; padding: 6px 8px; text-align: center; border: 1px solid #b4c6e7; margin-bottom: 12px;">
-                <div style="font-size: 9px; font-weight: 600; color: #1f3864;">OJT Supervisor / Immediate Head</div>
-            </div>
-            
-            <!-- Date Field -->
-            <div style="font-size: 9px;">
-                <span style="font-weight: 600;">Date:</span>
-                <span style="border-bottom: 1px solid #333; display: inline-block; width: 120px; margin-left: 16px;"></span>
-            </div>
-        </div>
+        // Certified correct
+        html += '<tr>' +
+            '<td colspan="5" style="border: 1px solid #b4c6e7; padding: 8px; font-weight: 600; font-size: 10px; color: #1f3864;">Certified Correct:</td>' +
+        '</tr>';
         
-        </div>`;
+        // Signature line
+        html += '<tr>' +
+            '<td colspan="5" style="border: 1px solid #b4c6e7; padding: 30px 8px 4px 8px; text-align: center; border-bottom: 2px solid #333; font-size: 9px; font-weight: 600;">' + (this.profileData.supervisor || '') + '</td>' +
+        '</tr>';
+        
+        // Role label
+        html += '<tr>' +
+            '<td colspan="5" style="background: #bdd7ee; border: 1px solid #b4c6e7; padding: 8px; text-align: center; font-size: 9px; font-weight: 600; color: #1f3864;">OJT Supervisor / Immediate Head</td>' +
+        '</tr>';
+        
+        // Date line
+        html += '<tr>' +
+            '<td colspan="5" style="border: 1px solid #b4c6e7; padding: 8px; font-size: 9px;"><strong>Date:</strong> _____________________</td>' +
+        '</tr>';
+        
+        html += '</tbody></table></div>';
         
         previewDiv.innerHTML = html;
     }
@@ -1168,27 +1158,27 @@ class OJTCalculator {
         // Row 1: Empty
         let row = worksheet.addRow(['', '', '', '', '', '', '']);
         row.height = 7.5;
-        row.getCell(1).border = { left: { style: 'medium', color: { argb: colors.navy } } };
+        row.getCell(1).border = {};
         row = worksheet.addRow(['', '', '', '', '', '', '']);
         row.height = 54;
         row.getCell(2).value = 'DAILY TIME REPORT\nOn-the-Job Training';
         row.getCell(2).alignment = { horizontal: 'center', vertical: 'center', wrapText: true };
         row.getCell(2).font = { name: 'Arial', size: 16, bold: true, color: { argb: colors.white } };
         row.getCell(2).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: colors.navy } };
-        row.getCell(1).border = { left: { style: 'medium', color: { argb: colors.navy } }, right: { style: 'medium', color: { argb: colors.navy } } };
+        row.getCell(1).border = { right: { style: 'medium', color: { argb: colors.navy } } };
         row.getCell(7).border = { left: { style: 'medium', color: { argb: colors.navy } } };
         worksheet.mergeCells('B2:F2');
         
         // Row 3: Empty
         row = worksheet.addRow(['', '', '', '', '', '', '']);
         row.height = 12;
-        row.getCell(1).border = { left: { style: 'medium', color: { argb: colors.navy } }, right: { style: 'medium', color: { argb: colors.navy } } };
+        row.getCell(1).border = { right: { style: 'medium', color: { argb: colors.navy } } };
         row.getCell(7).border = { left: { style: 'medium', color: { argb: colors.navy } } };
         
         // Row 4: Name and Required OJT Hours
         row = worksheet.addRow(['', 'Name:', this.profileData.name || '', '', 'Required OJT Hours:', this.hoursNeeded, '']);
         row.height = 20;
-        row.getCell(1).border = { left: { style: 'medium', color: { argb: colors.navy } }, right: { style: 'medium', color: { argb: colors.navy } } };
+        row.getCell(1).border = { right: { style: 'medium', color: { argb: colors.navy } } };
         row.getCell(2).style = profileCellStyle(true);
         row.getCell(3).style = profileCellStyle(false);
         row.getCell(3).alignment = { horizontal: 'left', vertical: 'center' };
@@ -1200,7 +1190,7 @@ class OJTCalculator {
         // Row 5: School / University and Total Hours Rendered
         row = worksheet.addRow(['', 'School / University:', this.profileData.school || '', this.profileData.school || '', 'Total Hours Rendered:', formatHM(totalHours), '']);
         row.height = 31;
-        row.getCell(1).border = { left: { style: 'medium', color: { argb: colors.navy } }, right: { style: 'medium', color: { argb: colors.navy } } };
+        row.getCell(1).border = { right: { style: 'medium', color: { argb: colors.navy } } };
         row.getCell(2).style = profileCellStyle(true);
         row.getCell(2).alignment = { horizontal: 'right', vertical: 'center', wrapText: false };
         row.getCell(3).style = profileCellStyle(false);
@@ -1217,7 +1207,7 @@ class OJTCalculator {
         // Row 6: Company / Department
         row = worksheet.addRow(['', 'Company / Department:', this.profileData.company || '', '', '', '', '']);
         row.height = 20;
-        row.getCell(1).border = { left: { style: 'medium', color: { argb: colors.navy } }, right: { style: 'medium', color: { argb: colors.navy } } };
+        row.getCell(1).border = { right: { style: 'medium', color: { argb: colors.navy } } };
         row.getCell(2).style = profileCellStyle(true);
         row.getCell(3).style = profileCellStyle(false);
         row.getCell(3).alignment = { horizontal: 'left', vertical: 'center' };
@@ -1228,7 +1218,7 @@ class OJTCalculator {
         // Row 7: Period Covered
         row = worksheet.addRow(['', 'Period Covered:', `Month of ${monthName}`, '', '', '', '']);
         row.height = 20;
-        row.getCell(1).border = { left: { style: 'medium', color: { argb: colors.navy } }, right: { style: 'medium', color: { argb: colors.navy } } };
+        row.getCell(1).border = { right: { style: 'medium', color: { argb: colors.navy } } };
         row.getCell(2).style = profileCellStyle(true);
         row.getCell(3).style = profileCellStyle(false);
         row.getCell(3).alignment = { horizontal: 'left', vertical: 'center' };
@@ -1239,13 +1229,13 @@ class OJTCalculator {
         // Row 8: Empty
         row = worksheet.addRow(['', '', '', '', '', '', '']);
         row.height = 12;
-        row.getCell(1).border = { left: { style: 'medium', color: { argb: colors.navy } }, right: { style: 'medium', color: { argb: colors.navy } } };
+        row.getCell(1).border = { right: { style: 'medium', color: { argb: colors.navy } } };
         row.getCell(7).border = { left: { style: 'medium', color: { argb: colors.navy } } };
         
         // Row 9: Headers
         row = worksheet.addRow(['', 'No.', 'Date', 'Time In', 'Time Out', 'Hours Rendered', '']);
         row.height = 27.8;
-        row.getCell(1).border = { left: { style: 'medium', color: { argb: colors.navy } }, right: { style: 'medium', color: { argb: colors.navy } } };
+        row.getCell(1).border = { right: { style: 'medium', color: { argb: colors.navy } } };
         row.getCell(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF2E5090' } };
         for (let i = 2; i <= 6; i++) {
             row.getCell(i).style = headerCellStyle();
@@ -1260,7 +1250,7 @@ class OJTCalculator {
             row = worksheet.addRow(['', '', '', '', '', '', '']);
             row.height = 18;
             
-            row.getCell(1).border = { left: { style: 'medium', color: { argb: colors.navy } }, right: { style: 'medium', color: { argb: colors.navy } } };
+            row.getCell(1).border = { right: { style: 'medium', color: { argb: colors.navy } } };
             row.getCell(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF2E5090' } };
             
             // Alternating row fill
@@ -1354,7 +1344,7 @@ class OJTCalculator {
         // Row 35: Footer note
         row = worksheet.addRow(['', '* Hours rendered are computed net of 1-hour lunch break, capped at 8 hours/day.', '', '', '', '', '']);
         row.height = 21.8;
-        row.getCell(1).border = { left: { style: 'medium', color: { argb: colors.navy } }, right: { style: 'medium', color: { argb: colors.navy } } };
+        row.getCell(1).border = { right: { style: 'medium', color: { argb: colors.navy } } };
         row.getCell(2).font = { name: 'Arial', size: 8, italic: true, color: { argb: 'FF666666' } };
         row.getCell(2).alignment = { horizontal: 'left', vertical: 'center' };
         row.getCell(7).border = { left: { style: 'medium', color: { argb: colors.navy } } };
@@ -1363,7 +1353,7 @@ class OJTCalculator {
         // Row 36: Total
         row = worksheet.addRow(['', 'TOTAL HOURS RENDERED', '', '', '', formatHM(totalHours), '']);
         row.height = 21.8;
-        row.getCell(1).border = { left: { style: 'medium', color: { argb: colors.navy } }, right: { style: 'medium', color: { argb: colors.navy } } };
+        row.getCell(1).border = { right: { style: 'medium', color: { argb: colors.navy } } };
         
         for (let i = 2; i <= 6; i++) {
             row.getCell(i).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: colors.navy } };
@@ -1382,19 +1372,19 @@ class OJTCalculator {
         // Row 37: Empty
         row = worksheet.addRow(['', '', '', '', '', '', '']);
         row.height = 14.4;
-        row.getCell(1).border = { left: { style: 'medium', color: { argb: colors.navy } }, right: { style: 'medium', color: { argb: colors.navy } } };
+        row.getCell(1).border = { right: { style: 'medium', color: { argb: colors.navy } } };
         row.getCell(7).border = { left: { style: 'medium', color: { argb: colors.navy } } };
         
         // Row 38: Empty
         row = worksheet.addRow(['', '', '', '', '', '', '']);
         row.height = 14.4;
-        row.getCell(1).border = { left: { style: 'medium', color: { argb: colors.navy } }, right: { style: 'medium', color: { argb: colors.navy } } };
+        row.getCell(1).border = { right: { style: 'medium', color: { argb: colors.navy } } };
         row.getCell(7).border = { left: { style: 'medium', color: { argb: colors.navy } } };
         
         // Rows 39-40: Certified correct and empty
         row = worksheet.addRow(['', 'Certified Correct:', '', '', '', '', '']);
         row.height = 13.5;
-        row.getCell(1).border = { left: { style: 'medium', color: { argb: colors.navy } }, right: { style: 'medium', color: { argb: colors.navy } } };
+        row.getCell(1).border = { right: { style: 'medium', color: { argb: colors.navy } } };
         row.getCell(2).font = { name: 'Arial', size: 10, bold: true, color: { argb: colors.navy } };
         row.getCell(2).alignment = { horizontal: 'left', vertical: 'center' };
         row.getCell(7).border = { left: { style: 'medium', color: { argb: colors.navy } } };
@@ -1402,13 +1392,13 @@ class OJTCalculator {
         // Row 40: Empty
         row = worksheet.addRow(['', '', '', '', '', '', '']);
         row.height = 13.5;
-        row.getCell(1).border = { left: { style: 'medium', color: { argb: colors.navy } }, right: { style: 'medium', color: { argb: colors.navy } } };
+        row.getCell(1).border = { right: { style: 'medium', color: { argb: colors.navy } } };
         row.getCell(7).border = { left: { style: 'medium', color: { argb: colors.navy } } };
         
         // Row 41: Supervisor section
         row = worksheet.addRow(['', '', '', '', '', '', '']);
         row.height = 36;
-        row.getCell(1).border = { left: { style: 'medium', color: { argb: colors.navy } }, right: { style: 'medium', color: { argb: colors.navy } } };
+        row.getCell(1).border = { right: { style: 'medium', color: { argb: colors.navy } } };
         for (let i = 3; i <= 5; i++) {
             row.getCell(i).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFDEEAF1' } };
             row.getCell(i).border = {
@@ -1420,7 +1410,7 @@ class OJTCalculator {
         // Row 42: Supervisor name
         row = worksheet.addRow(['', '', this.profileData.supervisor || '', '', '', '', '']);
         row.height = 13.5;
-        row.getCell(1).border = { left: { style: 'medium', color: { argb: colors.navy } }, right: { style: 'medium', color: { argb: colors.navy } } };
+        row.getCell(1).border = { right: { style: 'medium', color: { argb: colors.navy } } };
         row.getCell(3).value = this.profileData.supervisor || '';
         row.getCell(3).font = { name: 'Arial', size: 9, color: { argb: 'FF444444' } };
         row.getCell(3).alignment = { horizontal: 'center', vertical: 'center' };
@@ -1430,7 +1420,7 @@ class OJTCalculator {
         // Row 43: Supervisor position
         row = worksheet.addRow(['', '', this.profileData.supervisorRole || 'OJT Supervisor / Immediate Head', '', '', '', '']);
         row.height = 13.5;
-        row.getCell(1).border = { left: { style: 'medium', color: { argb: colors.navy } }, right: { style: 'medium', color: { argb: colors.navy } } };
+        row.getCell(1).border = { right: { style: 'medium', color: { argb: colors.navy } } };
         row.getCell(3).value = this.profileData.supervisorRole || 'OJT Supervisor / Immediate Head';
         row.getCell(3).font = { name: 'Arial', size: 9, color: { argb: 'FF444444' } };
         row.getCell(3).alignment = { horizontal: 'center', vertical: 'center' };
@@ -1440,7 +1430,7 @@ class OJTCalculator {
         // Row 44: OJT Supervisor label
         row = worksheet.addRow(['', '', 'OJT Supervisor / Immediate Head', '', '', '', '']);
         row.height = 18;
-        row.getCell(1).border = { left: { style: 'medium', color: { argb: colors.navy } }, right: { style: 'medium', color: { argb: colors.navy } } };
+        row.getCell(1).border = { right: { style: 'medium', color: { argb: colors.navy } } };
         row.getCell(3).value = 'OJT Supervisor / Immediate Head';
         row.getCell(3).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFBDD7EE' } };
         row.getCell(3).font = { name: 'Arial', size: 10, bold: true, color: { argb: colors.navy } };
@@ -1451,7 +1441,7 @@ class OJTCalculator {
         // Row 45: Date line
         row = worksheet.addRow(['', '', 'Date: ___________________________', '', '', '', '']);
         row.height = 13.5;
-        row.getCell(1).border = { left: { style: 'medium', color: { argb: colors.navy } }, right: { style: 'medium', color: { argb: colors.navy } } };
+        row.getCell(1).border = { right: { style: 'medium', color: { argb: colors.navy } } };
         row.getCell(3).value = 'Date: ___________________________';
         row.getCell(3).font = { name: 'Arial', size: 9 };
         row.getCell(3).alignment = { horizontal: 'left', vertical: 'center' };
@@ -1461,7 +1451,7 @@ class OJTCalculator {
         // Bottom border
         row = worksheet.addRow(['', '', '', '', '', '', '']);
         row.height = 7.5;
-        row.getCell(1).style = { border: { left: { style: 'medium', color: { argb: colors.navy } } } };
+        row.getCell(1).style = {};
         for (let i = 2; i <= 6; i++) {
             row.getCell(i).border = { 
                 top: { style: 'medium', color: { argb: colors.navy } }
@@ -2278,5 +2268,6 @@ class OJTCalculator {
         });
     }
 }
+
 
 
