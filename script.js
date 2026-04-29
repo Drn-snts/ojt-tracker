@@ -137,11 +137,37 @@ window.showSection = (name) => {
     document.querySelector(`.nav-item[onclick="showSection('${name}')"]`)?.classList.add('active');
     const titles = { dashboard: 'Dashboard', entries: 'Time Entries', weekly: 'Weekly Report', profile: 'Report Information', export: 'Export Report' };
     document.getElementById('topbarTitle').textContent = titles[name] || name;
+    // Close sidebar on mobile after selection
+    window.closeSidebar();
 };
 
 // ============================================================
-//  ABSENCE CALCULATOR MODAL FUNCTIONS
+//  MOBILE SIDEBAR TOGGLE
 // ============================================================
+window.toggleSidebar = () => {
+    const sidebar = document.getElementById('appScreen')?.querySelector('.sidebar');
+    const overlay = document.getElementById('sidebarOverlay');
+    
+    if (sidebar) {
+        sidebar.classList.toggle('mobile-open');
+    }
+    if (overlay) {
+        overlay.classList.toggle('active');
+    }
+};
+
+window.closeSidebar = () => {
+    const sidebar = document.getElementById('appScreen')?.querySelector('.sidebar');
+    const overlay = document.getElementById('sidebarOverlay');
+    
+    if (sidebar) {
+        sidebar.classList.remove('mobile-open');
+    }
+    if (overlay) {
+        overlay.classList.remove('active');
+    }
+};
+
 window.openAbsenceModal = () => {
     const modal = document.getElementById('absenceModal');
     if (modal) {
