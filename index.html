@@ -227,6 +227,41 @@
 </div>
 </div>
 
+<!-- ============================================================
+     ABSENCE CALCULATOR MODAL
+     ============================================================ -->
+<div id="absenceModal" class="modal hidden">
+    <div class="modal-overlay" onclick="window.safeCall('closeAbsenceModal')"></div>
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2><i class="bi bi-calculator"></i> Calculate End Date with Absences</h2>
+            <button class="modal-close" onclick="window.safeCall('closeAbsenceModal')">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label class="form-label"><i class="bi bi-calendar-x"></i> Number of Absence Days</label>
+                <input type="number" id="absenceDaysInput" min="0" value="0" class="form-input" placeholder="Enter number of days (including weekends and holidays)">
+                <p style="font-size: 12px; color: var(--text-2); margin-top: 8px;">
+                    <i class="bi bi-info-circle"></i> Count all days including weekends and holidays
+                </p>
+            </div>
+            
+            <div id="absenceResult" style="display: none; background: var(--bg); border-radius: 8px; padding: 16px; border-left: 4px solid var(--accent);">
+                <p style="color: var(--text-2); font-size: 13px; margin-bottom: 8px;">NEW ESTIMATED END DATE</p>
+                <p style="font-size: 24px; font-weight: 600; color: var(--text); margin: 0;"><span id="resultDate">--</span></p>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-outline" onclick="window.safeCall('closeAbsenceModal')">Close</button>
+            <button class="btn btn-primary" onclick="window.safeCall('calculateAbsenceDate')">
+                <i class="bi bi-calculator"></i> Calculate
+            </button>
+        </div>
+    </div>
+</div>
+
 <!-- Loading -->
 <div id="loadingOverlay" class="loading-overlay hidden">
     <div class="loading-spinner"></div>

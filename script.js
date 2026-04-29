@@ -140,6 +140,45 @@ window.showSection = (name) => {
 };
 
 // ============================================================
+//  ABSENCE CALCULATOR MODAL FUNCTIONS
+// ============================================================
+window.openAbsenceModal = () => {
+    const modal = document.getElementById('absenceModal');
+    if (modal) {
+        modal.classList.remove('hidden');
+        document.getElementById('absenceDaysInput').value = '0';
+        document.getElementById('absenceResult').style.display = 'none';
+        document.getElementById('absenceDaysInput').focus();
+    }
+};
+
+window.closeAbsenceModal = () => {
+    const modal = document.getElementById('absenceModal');
+    if (modal) {
+        modal.classList.add('hidden');
+    }
+};
+
+window.calculateAbsenceDate = () => {
+    const daysInput = document.getElementById('absenceDaysInput');
+    const absenceDays = parseInt(daysInput.value) || 0;
+    
+    if (absenceDays < 0) {
+        if (window.calculator) window.calculator.notify('Please enter a positive number!', 'error');
+        return;
+    }
+    
+    if (window.calculator) {
+        const newEndDate = window.calculator.calculateNewEndDateWithAbsence(absenceDays);
+        const resultEl = document.getElementById('resultDate');
+        if (resultEl) resultEl.textContent = newEndDate;
+        
+        const resultContainer = document.getElementById('absenceResult');
+        if (resultContainer) resultContainer.style.display = 'block';
+    }
+};
+
+// ============================================================
 //  AUTH STATE OBSERVER
 // ============================================================
 let _authResolved = false;
@@ -263,6 +302,7 @@ class OJTCalculator {
         document.getElementById('addBtn').addEventListener('click', () => this.addEntry());
         document.getElementById('duplicateBtn').addEventListener('click', () => this.duplicateEntry());
         document.getElementById('updateHours').addEventListener('click', () => this.updateHoursNeeded());
+        document.getElementById('absenceCalcBtn')?.addEventListener('click', () => window.openAbsenceModal());
         document.getElementById('exportBtn').addEventListener('click', () => this.exportToExcel());
         document.getElementById('exportBtnProfile')?.addEventListener('click', () => this.exportToExcel());
         document.getElementById('clearBtn').addEventListener('click', () => this.clearAll());
@@ -2158,6 +2198,51 @@ class OJTCalculator {
         a.click();
         URL.revokeObjectURL(url);
         this.notify('Weekly report downloaded!', 'success');
+    }
+
+    // ====================================================================
+    //  ABSENCE CALCULATOR - Calculate end date with absence days
+    // ====================================================================
+    calculateNewEndDateWithAbsence(absenceDays) {
+        const remHours = parseFloat(this.remainingHours());
+        if (remHours === 0 || isNaN(remHours)) return 'Done!';
+        
+        const dailyHours = 8;
+        const daysNeeded = Math.ceil(remHours / dailyHours);
+        
+        let currentDate = new Date();
+        let daysAdded = 0;
+        let absenceDaysCountdown = absenceDays;
+        
+        // Add absence days first (any calendar day)
+        const absenceEndDate = new Date(currentDate);
+        absenceEndDate.setDate(absenceEndDate.getDate() + absenceDays);
+        
+        // Then start counting work days from the end of absence period
+        currentDate = new Date(absenceEndDate);
+        
+        while (daysAdded < daysNeeded) {
+            currentDate.setDate(currentDate.getDate() + 1);
+            const day = currentDate.getDay();
+            const dateStr = this.dateToInputStr(currentDate);
+            
+            // Check if day should be counted
+            let isWorkday = true;
+            if (!this.includeWeekends && (day === 0 || day === 6)) {
+                isWorkday = false;  // Skip weekends if not including them
+            }
+            
+            // Check if it's a holiday or absence
+            const isHoliday = this.holidays.some(h => h.date === dateStr && h.type === 'holiday');
+            const isExistingAbsence = this.holidays.some(h => h.date === dateStr && h.type === 'absence');
+            
+            if (isWorkday && !isHoliday && !isExistingAbsence) {
+                daysAdded++;
+            }
+        }
+        
+        // Format as short date
+        return this.formatDateShort(this.dateToInputStr(currentDate));
     }
 
     _xmlEsc(str) {

@@ -530,6 +530,27 @@ textarea.form-input { resize: vertical; min-height: 80px; font-family: 'DM Sans'
 .btn-accent { background: linear-gradient(135deg, var(--red), var(--red-2)); color: #fff; }
 .btn-accent:hover { transform: translateY(-1px); }
 
+/* Absence Calculator Button */
+.btn-absence-calc {
+    background: none;
+    border: none;
+    color: var(--text-2);
+    font-size: 16px;
+    cursor: pointer;
+    padding: 4px 6px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    border-radius: 6px;
+}
+
+.btn-absence-calc:hover {
+    color: var(--red);
+    background: rgba(229, 57, 53, 0.12);
+    transform: scale(1.1);
+}
+
 /* =============================================
    TABLE
    ============================================= */

@@ -12,7 +12,15 @@
             <p class="stat-sub">hours left to complete</p>
         </div>
         <div class="stat-card stat-green">
-            <div class="stat-top"><span class="stat-label">Est. End Date</span><i class="bi bi-calendar stat-icon"></i></div>
+            <div class="stat-top">
+                <span class="stat-label">Est. End Date</span>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <i class="bi bi-calendar stat-icon"></i>
+                    <button class="btn-absence-calc" id="absenceCalcBtn" title="Calculate absences">
+                        <i class="bi bi-calculator"></i>
+                    </button>
+                </div>
+            </div>
             <p class="stat-value" id="estEndDate">--</p>
             <p class="stat-sub"><span id="daysRemaining">0</span> days remaining</p>
         </div>
