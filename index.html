@@ -158,7 +158,11 @@
 <div class="app-layout">
 
     <!-- SIDEBAR -->
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="window.safeCall('toggleSidebar')"></div>
     <aside class="sidebar">
+        <button class="sidebar-close" id="sidebarCloseBtn" onclick="window.safeCall('toggleSidebar')">
+            <i class="bi bi-x-lg"></i>
+        </button>
         <div class="sidebar-brand">
             <div class="brand-icon"><i class="bi bi-bar-chart-fill"></i></div>
             <div class="brand-text">
@@ -206,6 +210,9 @@
     <main class="main-content">
 
         <div class="topbar">
+            <button class="topbar-burger" id="burgerBtn" onclick="window.safeCall('toggleSidebar')">
+                <i class="bi bi-list"></i>
+            </button>
             <div class="topbar-title" id="topbarTitle">Dashboard</div>
             <div class="topbar-controls">
                 <label class="toggle-label">
