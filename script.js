@@ -868,11 +868,21 @@ class OJTCalculator {
 
     calculateDaysRemaining() {
         const remHours = parseFloat(this.remainingHours());
-        if (remHours === 0 || isNaN(remHours)) return 0;
+        if (remHours === 0 || isNaN(remHours)) return '0 days remaining';
         
         const dailyHours = 8;
-        const daysNeeded = Math.ceil(remHours / dailyHours);
-        return daysNeeded;
+        const days = Math.floor(remHours / dailyHours);
+        const hours = Math.round((remHours % dailyHours) * 10) / 10;  // Round to 1 decimal
+        
+        let result = '';
+        if (days > 0) result += `${days} day${days !== 1 ? 's' : ''}`;
+        if (hours > 0) {
+            if (result) result += ', ';
+            result += `${hours} hour${hours !== 1 ? 's' : ''}`;
+        }
+        result += ' remaining';
+        
+        return result || '0 days remaining';
     }
 
     calculateEstEndDate() {
